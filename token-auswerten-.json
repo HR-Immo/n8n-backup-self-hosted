@@ -1,0 +1,145 @@
+{
+  "name": "Token auswerten",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "09bc07c2-5547-4b11-a6de-45dda4fcb11c",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "resource": "execution",
+        "operation": "get",
+        "executionId": "{{ $json.executionId }}",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "4fcfab96-d386-47b1-95c3-e30a57ccdf9b",
+      "name": "Get an execution"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        0
+      ],
+      "id": "4880e02d-48a0-4485-b4b8-64162d2bee0b",
+      "name": "Update row(s)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "68d860b3-3847-4782-8aa5-89db7420e61e",
+      "name": "Wait",
+      "webhookId": "40bb6fc5-2f75-4cf2-b34f-54cee2bf0feb"
+    },
+    {
+      "parameters": {
+        "resource": "execution",
+        "operation": "get",
+        "executionId": "2224",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        416,
+        240
+      ],
+      "id": "c439fefc-6e77-450e-a29e-b36893c24b8d",
+      "name": "Get an execution1"
+    },
+    {
+      "parameters": {
+        "url": "https://hoewer-roth-immobilien.app.n8n.cloud/rest/executions/2224",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        624,
+        240
+      ],
+      "id": "77bf7dff-eb5f-4efb-ba3b-5efbee5cf2ee",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get an execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {},
+  "tags": [],
+  "__backupMeta": {
+    "archived": false,
+    "active": false,
+    "workflowId": "ZOefapY5b6Nd2iPA"
+  }
+}
