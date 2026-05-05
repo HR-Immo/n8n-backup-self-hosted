@@ -1,0 +1,334 @@
+{
+  "name": "Image to PDF Einstieg",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Testdateien",
+        "formDescription": "Hier kannst du Testdateien hochladen.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Dateien",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        64,
+        176
+      ],
+      "id": "5ad256ef-64bf-45c5-bc08-9e4b789f973a",
+      "name": "On form submission",
+      "webhookId": "39f51503-5923-45fa-8a91-91e73f8d95a7"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "I67luD0xfYq56rWT",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/I67luD0xfYq56rWT",
+          "cachedResultName": "Image to PDF Basis"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1408,
+        352
+      ],
+      "id": "fade9b1e-744a-475b-a04c-8159365932f7",
+      "name": "Call 'Image to PDF Basis'"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all binary property names from the first item\nconst binaries = Object.keys($input.first().binary ?? {});\n\n// Create one item per binary file\nreturn binaries.map(name => {\n  const binaryData = $input.first().binary[name];\n  return {\n    json: { \n      fileName: name,\n      mimeType: binaryData.mimeType // füge MIME-Typ hinzu\n    },\n    binary: {\n      data: binaryData\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        224
+      ],
+      "id": "16190437-fa3f-419b-80fb-ed27311702a7",
+      "name": "Dateien Aufspliten"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1184,
+        272
+      ],
+      "id": "dcd1d2bd-96db-4680-93bf-dfe8eb4339da",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "download_filename"
+            }
+          ]
+        },
+        "options": {
+          "includeBinaries": true
+        }
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        256
+      ],
+      "id": "662f40b4-dc4b-4f23-b131-ab5da929e378",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        352
+      ],
+      "id": "48dbd69f-1749-4eb5-882d-9695c44a38d1",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "content": "## Verarbeitung der Dateien\n\n### Ablauf:\n1. Prüfen ob gesplittet werden muss.\n2. Dateien werden aufgesplited\n3. Dateien werden im loop durch den Basis Workflow mit iLovePDF konvertiert",
+        "height": 624,
+        "width": 928,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "a4e4689a-852a-4c50-b955-76bb60873e52",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Start und Eingabe der Dateien",
+        "height": 624,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "efa9e0e4-789d-4029-9e5a-49355e8c44e2",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Ausgabe\n\nDateien werden zu einem Item aggregiert und dann ausgegeben",
+        "height": 624,
+        "width": 272,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1392,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "3b336a60-7203-4eaf-8233-b6e0510a8f8d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "adc3eab5-c73a-4537-8804-0b44cbb520f6",
+              "leftValue": "={{$items().length}}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        304
+      ],
+      "id": "b6974408-380d-4f6d-b0ac-ad27e0d49955",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": []
+        },
+        "includeOtherFields": true,
+        "include": "except",
+        "excludeFields": "size, _documentIndex, _binaryKey",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        400
+      ],
+      "id": "1a495291-58cf-42eb-97cb-0e4a9d9a04d1",
+      "name": "Edit Fields"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dateien Aufspliten": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Image to PDF Basis'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Image to PDF Basis'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Dateien Aufspliten",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {},
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T19:23:09.277Z",
+      "createdAt": "2026-03-10T19:23:09.277Z",
+      "id": "swUGLTcrmOPf6Rzt",
+      "name": "Helper"
+    },
+    {
+      "updatedAt": "2026-03-10T19:23:09.282Z",
+      "createdAt": "2026-03-10T19:23:09.282Z",
+      "id": "BknvQPf4RKM6YKKS",
+      "name": "Basic-Action"
+    }
+  ],
+  "__backupMeta": {
+    "archived": false,
+    "active": false,
+    "workflowId": "yF8rWLj4t2LfCaJP"
+  }
+}
