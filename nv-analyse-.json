@@ -1,0 +1,675 @@
+{
+  "name": "NV Analyse",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Analyse und Ausgabe\nVerarbeitung der Dateien durch eine KI\n\nKI Verarbeitet nur Text!\nDanach Anlage eines Drafts",
+        "height": 800,
+        "width": 416,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        160
+      ],
+      "typeVersion": 1,
+      "id": "f991a1c9-1397-47bc-a108-a34651f141cf",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Eingabe der Dateien im Formular\n\n",
+        "height": 496,
+        "width": 288,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1616,
+        464
+      ],
+      "typeVersion": 1,
+      "id": "35871b5b-0cc9-4c66-a3c8-8e224a991811",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "formTitle": "Neuvermietung Mietinteressenten vorstellen",
+        "formDescription": "Fülle folgende Felder aus, um einem Eigentümer einen neuen Mietinteressenten vorzustellen.\n\nAls Ergebnis dieses Workflows erhälts du einen E-Mail Entwurf im Postfach Vermietung ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Dokumente",
+              "fieldType": "file",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "ownerName",
+              "placeholder": "Herr/Frau Mustermann",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "ownerEmail",
+              "placeholder": "eigentümer1@mail.de; eigentümer2@mail.de;",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -1536,
+        688
+      ],
+      "id": "2f7e45a8-5691-44a5-87a1-6a2d5deee8e3",
+      "name": "Eingabeformular",
+      "webhookId": "3c7b6572-7fa5-4ca1-984e-405f533621e9"
+    },
+    {
+      "parameters": {
+        "content": "## Verarbeitung der Dateien mit externen Flows\n\n### Ablauf\n\n1. Dateien werden auf Text analysiert (extern)\n\n2. PDF Dokument erzeugen\n--> Entweder ist bereits korrekt eins oder muss durch PDF.co",
+        "height": 944,
+        "width": 864,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1312,
+        160
+      ],
+      "typeVersion": 1,
+      "id": "462b8638-08f2-4b63-8cfe-39f524d8a091",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alle Items aus dem Input holen\nconst items = $input.all();\n\n// --- 1) Draft-Item (mit draftId) finden ---\nconst draftItem = items.find(i => i.json.draftId);\nif (!draftItem) throw new Error(\"Draft-Item (mit draftId) nicht gefunden.\");\n\n// --- 2) Binary-Item (mit merged.pdf) finden ---\nconst binaryItem = items.find(i => i.binary && Object.keys(i.binary).length > 0);\nif (!binaryItem) throw new Error(\"Binary-Item mit PDF nicht gefunden.\");\n\n// Neue Struktur für das Output-Item aufbauen\nconst output = {\n  json: {\n    ...draftItem.json,\n    ...binaryItem.json, // falls z. B. status, filesize etc. benötigt werden\n  },\n  binary: {\n    ...binaryItem.binary, // enthält z. B. merged.pdf + metadata\n  }\n};\n\n// Ein einziges Item zurückgeben\nreturn [output];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        752
+      ],
+      "id": "39d8f38e-470e-4288-905c-6e281e8195db",
+      "name": "Items reduzieren"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "dqKzofSMjJVZsB1s",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/dqKzofSMjJVZsB1s",
+          "cachedResultName": "Datei-Bild Analyse"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1248,
+        592
+      ],
+      "id": "d9312cb5-1c81-40be-ada0-8337d0c4482f",
+      "name": "Call 'Datei-Bild Analyse'"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        704,
+        752
+      ],
+      "id": "7d28d306-bf7b-4828-b88e-36f3d3000f5b",
+      "name": "KI Antwort und PDF zusammenführen"
+    },
+    {
+      "parameters": {
+        "content": "## Draft erzeugen\n\n### Ablauf\n\n1. KI Antwort zu HTML Test mit Signatur Formatieren (Code)\n --> Parallel Token Verbrauch weg speichern\n\n2. Outlook Node Draft erstellen lassen\n\n3. Draft ID und PDFs zusammenführen\n\n4. Item Formatieren für Outlook Upload\n\n5. Datei in Base64 umwandeln\n\n6. Datei per Graph API ach Outlook hochladen",
+        "height": 960,
+        "width": 1600,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "d1331dec-c37d-4167-b2d0-16c8661c4714",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        752
+      ],
+      "id": "9a13b4d1-90fa-4675-ac37-79e32df5419d",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/users/admin@hoewer-roth-immobilien.de/messages/{{ $('Items reduzieren').item.json.draftId }}/attachments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"@odata.type\": \"microsoft.graph.fileAttachment\",\n  \"name\": \"Mietinteressent.pdf\",\n  \"contentType\": \"application/pdf\",\n  \"contentBytes\": \"{{ $json.data.replace(/\\\\s+/g, '') }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1328,
+        752
+      ],
+      "id": "b5bdc4af-d28d-4130-93d1-51395547bfec",
+      "name": "Anhang hinzufügen",
+      "credentials": {
+        "microsoftOAuth2Api": {
+          "id": "Giwhyorjb2ikNQHh",
+          "name": "Microsoft Graph Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Hier sind die vom Formular übergebenen Daten:\n\nName Eigentümer: {{ $('Eingabeformular').first().json.ownerName }}\nE-Mail Eigentümer: {{ $('Eingabeformular').first().json.ownerEmail }}\nUnterlagen Texte (wohnungsexposee & Interessent): \n{{ ($('Call \\'Datei-Bild Analyse\\'').item.json.text ?? []).join('\\n') }}"
+            },
+            {
+              "role": "system",
+              "content": "=# Prompt: Erstellung eines einheitlichen E-Mail-Texts zur Mietinteressentenanalyse\n\nDu bist Mitarbeiter in einer Immobilienverwaltung.\n\nDeine Aufgabe ist es, **ausschließlich auf Basis der bereitgestellten Texte und Dokumentinhalte** einen **professionellen E-Mail-Text** zur Analyse eines Mietinteressenten für den Eigentümer zu erstellen.\n\n---\n\n## Aufgabenbeschreibung\n\n1. Werte alle bereitgestellten Texte aus und extrahiere sämtliche Informationen zu:\n   - Mietinteressent(en)\n   - Wohnung / Objekt\n\n2. Bereite diese Informationen **strikt nach dem vorgegebenen E-Mail-Format** auf.\n\n3. Gib **nur den vollständigen E-Mail-Text** zurück.  \n   **Es wird kein Entwurf angelegt, kein Tool aufgerufen und kein Anhang erwähnt.**\n\n---\n\n## Wichtige Regeln\n\n- Verwende **ausschließlich Informationen**, die eindeutig aus den bereitgestellten Texten hervorgehen.\n- Erfinde **keine** Inhalte.\n- Wenn eine Information fehlt, schreibe **exakt**:  \n  `nicht angegeben`\n- Gib den Text **als reinen Plain-Text** aus:\n  - kein HTML\n  - keine HTML-Entities\n  - keine Escaping-Zeichen\n- Füge **keine zusätzlichen Absätze, Hinweise oder Erklärungen** hinzu.\n- Gib **nur den E-Mail-Text** zurück, nichts davor und nichts danach.\n- Das Body Feld soll ddann nur den Inhalt ab der Gerüßung enthalten und keine anderwitigen führenden elemente\n- Berechne das Alter der Personen über Angegebene Geburtsdaten\n- Verwende in der Anrede soweit möglich immer die Höfliche Sie Form mit Herr oder Frau und dem nachnamen, falls nur der vornahme angegebn ist darfst du auch ohne arbeiten\n- Wenn du anhand der Dokumente Unterlagen oder Angaben inerhalb der Dokumente erkannt hast, das es sich um eine Jobcenter Vermitelte Familie handelt kennzeichne dies zusätzlich oberhalb der Informationen in der E-Mail und kennzeichne das Einkünfte nicht durch ein Angestelten verhältniss existieren\n\n---\n\n## Verbindliches E-Mail-Format\n\nBetreff: Mietinteressent – {Adresse}\n\nBody (beginnt exakt mit der Begrüßung, ohne Überschrift):\nHallo {Eigentümer},\n\nwir bitten um kurze Freigabe des nachstehenden Mietinteressenten:\n\n{Jobcenter Familie/Person erkannt}\nInteressentendaten:\nEinzugsdatum: {Einzugsdatum}  \n{Name, Alter}  \n{Beruf / Arbeitgeber}  \nHaushalt: {Haushalt}  \nHaustiere: {Haustiere}  \nEinkommen / Bonität / Kaution: {Einkommen / Bonität / Kaution}  \nBürgschaft: {Bürgschaft}  \nBesonderheiten: {Besonderheiten}\n\nWohnungsdaten:\n{Fläche, Zimmer, Miete etc.}\n\n### Beispeil einer E-Mail\nBetreff: Mietinteressent – Sonnenweg 14, 3. OG rechts, 44139 Dortmund\n\nBody:\nHallo Herr Müller,\n\nwir bitten um kurze Freigabe des nachstehenden Mietinteressenten:\n\nInteressentendaten:\nEinzugsdatum: 01.10.2025\nAnna Schmidt, 31 Jahre\nKaufmännische Angestellte, Meyer & Sohn Logistik GmbH (unbefristet, seit 01.03.2022)\nBen Müller, 36 Jahre\nElektroniker im technischen Service, Stadtwerke Rhein-Ruhr AöR (unbefristet, seit 15.09.2019)\nHaushalt: 2 Personen (Anna Schmidt und Ben Müller)\nHaustiere: keine\nEinkommen / Bonität / Kaution: Anna Netto 2.195,68 EUR monatlich (Gehaltsabrechnung Juni 2025 vorgelegt); Ben Netto 2.058,22 EUR monatlich (Gehaltsabrechnung Juli 2025 vorgelegt); gemeinsames Netto-Einkommen gesamt 4.253,90 EUR; Schufa-Bonitätsauskunft kann eingeholt werden (Einverständnis erteilt); Kaution: kann in voller Höhe 3.150,00 EUR vor Einzug geleistet werden.\nBürgschaft: Vorname, Name Manfred Schmidt (geb. 12.04.1962), wohnhaft Kastanienweg 5, 44229 Dortmund, Telefon 0231 9123456, E-Mail manni.schm@example.de; uneingeschränkte Bürgschaft, Zahlung auf erste schriftliche Anforderung.\nBesonderheiten: Mietverhältnis aktuell gekündigt durch Mieter (Wohnungswechsel); keine Haustiere; keine Räumungsrechtsstreitigkeiten; Personalausweisnummern und Gehaltsnachweise liegen vor; Einzug ab 01.10.2025 gewünscht; Zustimmung zur Einholung von SCHUFA/Bonitätsauskünften erteilt.\n\nWohnungsdaten:\n3-Zimmer-Wohnung mit Balkon, Sonnenweg 14, 44139 Dortmund, 3. OG rechts\nWohnfläche: ca. 78 m²; Zimmer: 3 (Wohnzimmer, Schlafzimmer, Arbeits-/Kinderzimmer)\nVerfügbar ab: 01.10.2025\nKaltmiete: 1.050,00 EUR; Nebenkostenvorauszahlung: 250,00 EUR; Warmmiete (ca.): 1.300,00 EUR\nKaution: 3.150,00 EUR (3 Nettokaltmieten)\nHeizung: Gas-Zentralheizung; Energieausweis: Verbrauchsausweis 92 kWh/(m²·a), Effizienzklasse C\nAusstattung: Echtholzparkett in Wohn-/Schlafbereichen, Balkon (Südausrichtung), modernes Tageslichtbad mit Wanne und separater Dusche, Einbauküche nicht explizit angegeben, Kellerraum, Fahrradkeller, Waschmaschinenanschluss im Bad.\n\n\n---\n\n## Zusätzliche Vorgaben\n\n- Die Struktur, Reihenfolge und Wortwahl des Formats sind **verbindlich**.\n- Keine Abweichungen vom Format.\n- Keine zusätzlichen Überschriften oder Kommentare.\n- Keine Hinweise auf Dokumente, Anhänge oder Quellen.\n"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"Empfaenger\": {\n      \"type\": \"string\",\n      \"description\": \"E-Mail-Adresse des Empfängers\"\n    },\n    \"Betreff\": {\n      \"type\": \"string\",\n      \"description\": \"E-Mail Betreff\"\n    },\n    \"Body\": {\n      \"type\": \"string\",\n      \"description\": \"Vollständiger E-Mail-Text als Plain-Text\"\n    }\n  },\n  \"required\": [\"Empfaenger\", \"Betreff\", \"Body\"],\n  \"additionalProperties\": false\n}\n"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -352,
+        592
+      ],
+      "id": "cefa1b14-2bd1-4c19-85ac-fe1fdc33bf69",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Message a model').item.json.output[1].content[0].text.Betreff }}",
+        "bodyContent": "={{ $json.html }}",
+        "additionalFields": {
+          "bodyContentType": "html",
+          "toRecipients": "={{ $('Message a model').item.json.output[1].content[0].text.Empfaenger }}"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        592
+      ],
+      "id": "48a0132d-a472-4963-89f8-adcf018efb3f",
+      "name": "Create a draft",
+      "webhookId": "af4554fc-4320-4ec3-805b-737b8bc68afa",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1) Plain-Text Body aus dem Model holen\nconst bodyText = $input.first().json.output[1].content[0].text.Body;\n\n// 2) Plain-Text → HTML (mail-sicher)\nconst htmlBody = bodyText\n  .trim()\n  .split(\"\\n\\n\")\n  .map(p => `<p>${p.replace(/\\n/g, \"<br>\")}</p>`)\n  .join(\"\\n\");\n\n// 3) Feste HTML-Signatur\nconst signatureHtml = `\n<p><br>\n  Mit freundlichen Grüßen<br><br>\n\n  Ihr Höwer & Roth Immobilien Team<br>\n</p>\n\n<table cellpadding=\"0\" cellspacing=\"0\" style=\"font-family:Arial,Helvetica,sans-serif;color:#000;margin-top:20px;\">\n  <tr>\n    <td style=\"padding-right:15px;vertical-align:top;\"><br><br>\n      <img src=\"https://static.wixstatic.com/media/7f4261_f52ddd9a4a5e4f61a2125c30a3782c24~mv2.png\" width=\"300\" alt=\"Höwer & Roth Immobilien\" style=\"display:block;\">\n    </td>\n    <td style=\"border-left:1px solid #ccc;padding-left:15px;vertical-align:top;\">\n      <strong>Höwer & Roth Immobilien GmbH</strong><br>\n      Hüttenallee 65<br>\n      44534 Lünen<br><br>\n\n      <a href=\"mailto:vermietung@hoewer-roth-immobilien.de\" style=\"color:#000;text-decoration:none;\">\n        vermietung@hoewer-roth-immobilien.de\n      </a><br>\n      <a href=\"https://www.hoewer-roth-immobilien.de\" style=\"color:#000;text-decoration:none;\">\n        www.hoewer-roth-immobilien.de\n      </a>\n    </td>\n  </tr>\n</table><br>\n\n<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#000;margin:8px 0 0 0;\">\n  Geschäftsführer: Moritz Höwer, Justus Roth<br>\n  Registergericht: Amtsgericht Dortmund<br>\n  Registernummer: HRB 35767\n</p>\n\n<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#666;margin:10px 0 0 0;\">\n  Diese E-Mail wurde automatisch generiert.\n</p>\n\n`;\n\n// 4) Body + Signatur zusammenführen\nconst finalHtml = `\n${htmlBody}\n${signatureHtml}\n`;\n\n// 5) Rückgabe\nreturn [{\n  html: finalHtml\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        592
+      ],
+      "id": "837856e7-5161-4542-8e74-af180290c4f9",
+      "name": "E-Mail HTML Formatieren"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a591cf20-c813-4e12-94e0-686b7ecfb570",
+              "name": "draftId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        592
+      ],
+      "id": "3a4fa672-f896-467a-b755-7d4f726b1fda",
+      "name": "Draft ID abholen"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "Cl2bUOhanXs5Hdty",
+          "mode": "list",
+          "cachedResultName": "Token VVerbrauch",
+          "cachedResultUrl": "/projects/TWJUt9op9wDu0spk/datatables/Cl2bUOhanXs5Hdty"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "executingFlow": "NV Analyse",
+            "executionId": "={{$execution.id}}",
+            "tokenVerbraucht": "={{ $json.usage.total_tokens }}",
+            "kiModell": "={{ $json.model }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "executingFlow",
+              "displayName": "executingFlow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tokenVerbraucht",
+              "displayName": "tokenVerbraucht",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "kiModell",
+              "displayName": "kiModell",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "executionId",
+              "displayName": "executionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        432
+      ],
+      "id": "101b1c6a-52e2-4c1d-9d32-843d1e3bdc88",
+      "name": "Token auswertung"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wHeXLbC64bxRmXzS",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/wHeXLbC64bxRmXzS",
+          "cachedResultName": "Merge PDFs PDF.CO"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        912
+      ],
+      "id": "75d38e99-cdb8-4346-921e-7a198e2d4bf8",
+      "name": "Call 'Merge PDFs PDF.CO'"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "adc3eab5-c73a-4537-8804-0b44cbb520f6",
+              "leftValue": "={{$json.Dokumente.length}}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1248,
+        784
+      ],
+      "id": "aec8ddfb-7749-4eda-9d88-8e7d226ba0c5",
+      "name": "Anzahl Dokumente = 1?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  item.binary.data = item.binary.Dokumente;\n  delete item.binary.Dokumente;\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        704
+      ],
+      "id": "0d2cac0b-515f-4860-822c-38ac4e19c057",
+      "name": "Umbenen des Dokuments"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "349bee64-9a46-46f2-9c33-552c64711903",
+              "leftValue": "={{ $json.Dokumente[0].mimetype }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1024,
+        720
+      ],
+      "id": "c1268e20-1fa7-4c63-97ff-47b4e352423d",
+      "name": "Datentyp Dokumente = PDF? 1"
+    }
+  ],
+  "connections": {
+    "Eingabeformular": {
+      "main": [
+        [
+          {
+            "node": "Anzahl Dokumente = 1?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call 'Datei-Bild Analyse'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Items reduzieren": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Datei-Bild Analyse'": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KI Antwort und PDF zusammenführen": {
+      "main": [
+        [
+          {
+            "node": "Items reduzieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Anhang hinzufügen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "E-Mail HTML Formatieren",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Token auswertung",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Draft ID abholen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-Mail HTML Formatieren": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft ID abholen": {
+      "main": [
+        [
+          {
+            "node": "KI Antwort und PDF zusammenführen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Merge PDFs PDF.CO'": {
+      "main": [
+        [
+          {
+            "node": "KI Antwort und PDF zusammenführen",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Anzahl Dokumente = 1?": {
+      "main": [
+        [
+          {
+            "node": "Datentyp Dokumente = PDF? 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Merge PDFs PDF.CO'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Umbenen des Dokuments": {
+      "main": [
+        [
+          {
+            "node": "KI Antwort und PDF zusammenführen",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Datentyp Dokumente = PDF? 1": {
+      "main": [
+        [
+          {
+            "node": "Umbenen des Dokuments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Merge PDFs PDF.CO'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "UOTTrHniJeBc7Vgx",
+    "callerPolicy": "workflowsFromSameOwner",
+    "timeSavedPerExecution": 10
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "__backupMeta": {
+    "archived": false,
+    "active": true,
+    "workflowId": "sycBkx1e56N7yPct"
+  }
+}
