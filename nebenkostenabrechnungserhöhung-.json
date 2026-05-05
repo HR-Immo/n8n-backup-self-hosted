@@ -1,0 +1,1172 @@
+{
+  "name": "Nebenkostenabrechnungserhöhung",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "55977b23cab04e3e",
+        "jsonParameters": true,
+        "download": true,
+        "propertiesJson": "={\n  \"meta\": {\n    \"document_type\": \"Nebenkostenvorauszahlungserhöhung\",\n    \"created_at\": \"{{ $('Output zu JSON').item.json.meta.created_at }}\",\n    \"author_name\": \"{{ $('Output zu JSON').item.json.meta.author_name }}\",\n    \"location\": \"Lünen\"\n  },\n\n  \"tenant\": {\n    \"name\": \"{{ $('Output zu JSON').item.json.tenant.name }}\",\n    \"street\": \"{{ $('Output zu JSON').item.json.tenant.street }}\",\n    \"postal_code\": \"{{ $('Output zu JSON').item.json.tenant.postal_code }}\",\n    \"city\": \"{{ $('Output zu JSON').item.json.tenant.city }}\"\n  },\n\n  \"property\": {\n    \"address\": \"{{ $('Output zu JSON').item.json.property.address }}\",\n    \"unit\": \"{{ $('Output zu JSON').item.json.property.unit }}\",\n    \"contract_date\": \"{{ $('Output zu JSON').item.json.property.contract_date }}\"\n  },\n\n  \"billing_period\": {\n    \"from\": \"{{ $('Output zu JSON').item.json.billing_period.from }}\",\n    \"to\": \"{{ $('Output zu JSON').item.json.billing_period.to }}\"\n  },\n\n  \"previous_payments\": {\n    \"monthly_operating_costs\": \"{{ $('Output zu JSON').item.json.previous_payments.monthly_operating_costs }}\",\n    \"monthly_heating_costs\": \"{{ $('Output zu JSON').item.json.previous_payments.monthly_heating_costs }}\",\n    \"total_paid\": \"{{ $('Output zu JSON').item.json.previous_payments.total_paid }}\"\n  },\n\n  \"actual_costs\": {\n    \"total_operating_costs\": \"{{ $('Output zu JSON').item.json.actual_costs.total_operating_costs }}\"\n  },\n\n  \"billing_result\": {\n    \"additional_payment\": \"{{ $('Output zu JSON').item.json.billing_result.additional_payment }}\"\n  },\n\n  \"adjustment_calculation\": {\n    \"monthly_adjustment_total\": \"{{ $('Output zu JSON').item.json.adjustment_calculation.monthly_adjustment_total }}\"\n  },\n\n  \"new_payments\": {\n    \"monthly_operating_costs\": \"{{ $('Output zu JSON').item.json.new_payments.monthly_operating_costs }}\",\n    \"monthly_heating_costs\": \"{{ $('Output zu JSON').item.json.new_payments.monthly_heating_costs }}\",\n    \"monthly_total\": \"{{ $('Output zu JSON').item.json.new_payments.monthly_total }}\"\n  },\n\n  \"effectiveness\": {\n    \"effective_from\": \"{{ $('Output zu JSON').item.json.effectiveness.effective_from }}\"  \n}\n}",
+        "options": {
+          "fileName": "=Nebenkostenvorauszahlungserhöhung_{{ $json.tenant.name }}.pdf"
+        }
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        1232
+      ],
+      "id": "35e4047d-e30a-41b2-834d-073b2f3f5d0e",
+      "name": "Create a pdf",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "yPDxE5mBsw0O87Z3",
+          "name": "APITemplate.io account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Erstes Item referenzieren\nconst firstItem = $input.first();\n\n// Autor auslesen (Fallback auf null)\nconst autor = firstItem.json?.Autor ?? null;\n\n// Alle Binary-Property-Namen holen\nconst binaries = Object.keys(firstItem.binary ?? {});\n\n// Pro Binary ein eigenes Item erzeugen\nreturn binaries.map(name => {\n  const binaryData = firstItem.binary[name];\n\n  return {\n    json: {\n      fileName: name,\n      mimeType: binaryData.mimeType,\n      autor: autor, // ✅ Autor hier hinzufügen\n    },\n    binary: {\n      data: binaryData,\n    },\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -928,
+        1120
+      ],
+      "id": "0c98a209-21cd-4c29-b538-c554e6f9df49",
+      "name": "Dateien Aufspliten"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -656,
+        1120
+      ],
+      "id": "b9e285ee-a362-469b-b794-cf63e91950df",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "dqKzofSMjJVZsB1s",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/dqKzofSMjJVZsB1s",
+          "cachedResultName": "Datei-Bild Analyse"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -448,
+        1248
+      ],
+      "id": "b371a62e-e046-49e6-9605-1282a1483b4b",
+      "name": "Call 'Datei-Bild Analyse'"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Übergebenes Dokument: {{ $json.text }}\nÜbergebener Autor: {{ $('Loop Over Items').item.json.autor }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Systemprompt - Nebenkosteabrechung\nDeine aufgabe ist die berietstelllung der Benötigten Daten um Nebenkostenerhöhungsschreiben in einer Immobilienverstaltung zu erstellen.\n\n## Rolle\nDu bist ein **hochpräziser, strikt regelbasierter Fachagent für Miet- und Nebenkostenabrechnungen**.  \nDeine Aufgabe ist es, **ausschließlich** auf Basis der bereitgestellten Dokumente und der Impower-MCP-Schnittstellen ein **valide befülltes JSON** für eine *Nebenkostenvorauszahlungserhöhung* zu erzeugen.\n\nDu **darfst niemals raten, schätzen, interpretieren oder Werte plausibilisieren**.\n\n## Tools\n- MCP Impower (Hausverwalter-Tool): Dies ist einne Tollsamlung, über welche du die Möglichkeit hast mit dem Impower System zu komunizieren. Es bietet dir alle benötigten schnnitstellen um die informationen anzufragen.\n- Impower APi Exchange Plan: \n  Dieses Tool ruft den Impower Exchange-Plan-Endpoint auf, um die monatliche Miete eines konkreten Vertrags zu ermitteln. Das Tool aknn erst verwendet werden, sobald eine contractId bekannt ist. Der Endpoint erwartet die contractId als Query-Parameter contractIds. Der Tool-Aufruf darf nur erfolgen, wenn mindestens eine gültige contractId vorliegt. Mit diesem Tool erhälst du alle detalierten Kosten die in einem Vertrag bestehen. darunter findest du sowohl die gesammten Mietkosten, als auch die aufteilung der Nebenkosten in Betriebskosten und Heizkosten.\nEndpunkt:\n  https://api.app.impower.de/services/pmp-accounting/api/v1/exchange-plan\nQueye-Parameter:\ncontractIds={contractIds}\nplanTypes=RENT_BREAKDOWN,RENT_FLAT_RATE\nstates=ACTIVATED\nsize=99999\n\n## Extraktionsregeln (VERPFLICHTEND)\n- Tool-Antworten können JSON als Text enthalten.\n  Du musst dieses JSON vollständig interpretieren.\n- Wenn Werte in Arrays enthalten sind, nutze das logisch passende Element\n  (z. B. aktive Einheit, aktiver Vertrag).\n- Wähle immer nur die Informationen, welche du benötigst um den Json vollständig befüllen zu können\n- Setze ein Feld NUR dann auf \"nicht hinterlegt\",\n  wenn du die komplette Tool-Antwort geprüft hast\n  und kein passender Wert existiert.\n\n## Vorgehensweise (VERPFLICHTEND)\n\n### Phase 1 - Dokumentenanalyse (Lesen)\nZunächst erhälst du eine Nebenkostenabrechnung des Vergangen Abrechnungszeitraums mit übergeben.\n\nExtrahiere **ausschließlich**:\n- Den vollständdigen Addressat (alle `tanent.*` informationen)\n- Abrechnungszeitraum (`billing_period.from`, `billing_period.to`)\n- Tatsächliche umlagefähige Betriebskosten (Gesamtsumme)\n- Summe der im Abrechnungszeitraum geleisteten Vorauszahlungen\n- Ergebnis der Abrechnung:\n  - Nachzahlung (+)\n  - Guthaben (-)\n\n---\n\n### Phase 2 - Datenabfrage Impower (Beschaffen)\nNun verwendest du die Schnittstellen MCP Impower (Hausverwalter-Tool) und Impower APi Exchange Plan zur Struckturierten Abfrage folgender Informationen:\n\n#### `property.*`\n- Suche unter dem MCP Impower (Hausverwalter-Tool) nach der Adressierten Person, und ermittle darüber den Mietvertrag, Das Objekt, die Adresse dessen, und die Lage der Wohnung in dem Objekt.\n\n##### Vertrag\n- **Erstellungsdatum des Mietvertrags**\n  - Quelle: Impower MCP → Kontakt → Verträge des Kontakts → Contract → Datum des Contracts\n  - ❌ Niemals Vertragsbeginn, Aktivierungsdatum oder Änderungsdatum verwenden\n\n---\n\n### Phase 3 - Zahlungsdaten (PFLICHT: Impower API Exchange Plan)\nSobald eine ContractId bekannt ist, musst du über das Tool Impower API Exchange Plan die Informatioe über die Mietzahlug dieses Vertrages abholen.\n\nIn den Wertenn findet du die MMMiethöhe und deren Bestandteile. Du musst hier explizit die Moatlichen Betriebskosten als `previous_payments.monthly_operating_costs` ud die Monatlichen Heizkosten als `previous_payments.monthly_heating_costs` ermitteln.\n\n# Rules\n- Wenn die Nachzahlung unterhalb von 100€ liegt setzte \"nachzahlung_100\": false\n- Fülle das Output JSON immer maximal vollständig auf.\n- Falls du zu manchen felder keine Informationen finden kannst, weil diese nicht hinterlegt sind, fülle dies mit \"nicht hinterlegt\".\n- Wenn ein Feld nicht ermittelbar ist, gib explizit an,\n  welcher Endpoint keine Daten geliefert hat.\n- Falls du manche Felder nicht füllen kannst, weil du keinen Zugriff hast diese Informationen zu erfragen, fülle diese mit \"Abfrage nicht möglich, entpunkt {Endpunkt xy} nicht berechtigt\".\n\n---\n\n### Phase 4 - Berechnen der neuen Werte\nNun hast du alle bisherigen werte erhoben, und berechnest mir daraus die `new_payments`\n\n#### Monatliche Erhöhung\nmonthly_adjustment_base =\nAUFRUNDEN( additional_payment / 12 auf den nächsten 10er )\n\nmonthly_adjustment_total =\nmonthly_adjustment_base + 10\n\n#### Aufteilung Betriebskosten/Heizkosten\noperating_costs_increase = monthly_adjustment_total / 2\nheating_costs_increase   = monthly_adjustment_total / 2\n\n#### Neue Vorauszahlung\nnew_operating_costs =\nprevious_operating_costs + operating_costs_increase\n\nnew_heating_costs =\nprevious_heating_costs + heating_costs_increase\n\nmonthly_total =\nnew_operating_costs + new_heating_costs\n\n## Regeln (Verpflichtend)\n\n### Datums- und Fixregeln (ohne Interpretation)\n- nachzahlung_100 = sobald der nachzahlungsbetrag (additional_payment) >= 100 Euro ist wird der Wert auf true gesetzt. Andernfalls (additional_payment<100 Euro) wird der Wert auf false gesetzt.\n- created_at = aktuelles Datum (DD.MM.YYYY): {{ $now.format('DD.MM.YYYY') }}\n- document_date = aktuelles Datum (DD.MM.YYYY): {{ $now.format('DD.MM.YYYY') }}\n- Das Datum muss immer in dem Deutschen Datumsformat gesetzt werden!\n- location = immer „Lünen“\n- document_type = immer „Nebenkostenvorauszahlungserhöhung“\n\n### Wirksamkeit der Erhöhung\neffective_from =\nERSTER_TAG_DES_MONATS( created_at + 2 Monate )\n\n#### Beispiele\n- 21.01.2026 → 01.03.2026\n- 05.02.2026 → 01.04.2026\n\n## Ausgabe\n\nGib ausschließlich ein valides JSON-Objekt zurück.\nKein Text, keine Erklärung, kein Wrapper.\nKein Feld \"output\".\n\nDer Json soll naher so aufgebaut sein:\n{\n  \"meta\": {\n    \"nachzahlung_100\": true,\n    \"document_type\": \"Nebenkostenvorauszahlungserhöhung\",\n    \"created_at\": \"2026-02-01\",\n    \"author_name\": \"Max Mustermann\",\n    \"location\": \"Lünen\"\n  },\n\n  \"tenant\": {\n    \"name\": \"Erika Musterfrau\",\n    \"street\": \"Musterstraße 12\",\n    \"postal_code\": \"44534\",\n    \"city\": \"Lünen\"\n  },\n\n  \"property\": {\n    \"address\": \"Musterstraße 12\",\n    \"unit\": \"2. OG links\",\n    \"contract_date\": \"15.03.2021\"\n  },\n\n  \"billing_period\": {\n    \"from\": \"01.01.2024\",\n    \"to\": \"31.12.2024\"\n  },\n\n  \"previous_payments\": {\n    \"monthly_operating_costs\": 120.00,\n    \"monthly_heating_costs\": 80.00,\n    \"total_paid\": 2400.00\n  },\n\n  \"actual_costs\": {\n    \"total_operating_costs\": 2850.00\n  },\n\n  \"billing_result\": {\n    \"additional_payment\": 450.00\n  },\n\n  \"adjustment_calculation\": {\n    \"monthly_adjustment_total\": 50.00\n  },\n\n  \"new_payments\": {\n    \"monthly_operating_costs\": 145.00,\n    \"monthly_heating_costs\": 105.00,\n    \"monthly_total\": 250.00\n  },\n\n  \"effectiveness\": {\n    \"effective_from\": \"01.04.2026\"\n  }\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        192
+      ],
+      "id": "a484bed8-d0f3-482d-8135-93c5e2ab6c9b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        400
+      ],
+      "id": "2443a5ea-bb7f-4f74-a835-556a20a75662",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://impower.hr-immobilien-mcp.cl.immodigit.de/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "include": "selected",
+        "includeTools": [
+          "get-v-2-contacts",
+          "get-v-2-contacts-contact-id",
+          "get-v-2-contracts",
+          "get-v-2-contracts-contract-id",
+          "get-v-2-units",
+          "get-v-2-units-unit-id",
+          "get-v-2-properties",
+          "get-v-2-properties-property-id"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        448
+      ],
+      "id": "830700b5-70d2-4203-aa30-7a997905a2e5",
+      "name": "MCP Impower (Hausverwalter-Tool)3",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IvHL3uL7oIKfyzGG",
+          "name": "Impower MCP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Stellt einen HTTP Request gege die Impower Api, um über den Priaten Endpunkt an den Exchange pla und somit miethöhen zu gelannge.",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        624,
+        448
+      ],
+      "id": "6cccf9c7-4fec-42d2-b8fa-9054e94d0e0c",
+      "name": "Impower APi Exchange Plan2",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"meta\": {\n    \"nachzahlung_100\": true,\n    \"document_type\": \"Nebenkostenvorauszahlungserhöhung\",\n    \"created_at\": \"2026-02-01\",\n    \"author_name\": \"Max Mustermann\",\n    \"location\": \"Lünen\"\n  },\n\n  \"tenant\": {\n    \"name\": \"Erika Musterfrau\",\n    \"street\": \"Musterstraße 12\",\n    \"postal_code\": \"44534\",\n    \"city\": \"Lünen\"\n  },\n\n  \"property\": {\n    \"address\": \"Musterstraße 12\",\n    \"unit\": \"2. OG links\",\n    \"contract_date\": \"15.03.2021\"\n  },\n\n  \"billing_period\": {\n    \"from\": \"01.01.2024\",\n    \"to\": \"31.12.2024\"\n  },\n\n  \"previous_payments\": {\n    \"monthly_operating_costs\": 120.00,\n    \"monthly_heating_costs\": 80.00,\n    \"total_paid\": 2400.00\n  },\n\n  \"actual_costs\": {\n    \"total_operating_costs\": 2850.00\n  },\n\n  \"billing_result\": {\n    \"additional_payment\": 450.00\n  },\n\n  \"adjustment_calculation\": {\n    \"monthly_adjustment_total\": 50.00\n  },\n\n  \"new_payments\": {\n    \"monthly_operating_costs\": 145.00,\n    \"monthly_heating_costs\": 105.00,\n    \"monthly_total\": 250.00\n  },\n\n  \"effectiveness\": {\n    \"effective_from\": \"01.04.2026\"\n  }\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        464
+      ],
+      "id": "61dd8783-1ea9-4902-89d6-f463d92e8128",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        640
+      ],
+      "id": "b95e72d8-e7ec-44ab-af64-2ce8cc6ff234",
+      "name": "OpenAI Chat Model6",
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        1440
+      ],
+      "id": "452944b3-533e-479e-bf68-9247a6930e3a",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://impower-mcp:4000/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "include": "selected",
+        "includeTools": [
+          "impower_contacts_get",
+          "impower_contacts_list",
+          "impower_contracts_list",
+          "impower_contracts_get",
+          "impower_units_list",
+          "impower_units_get",
+          "impower_properties_list",
+          "impower_properties_get"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        1488
+      ],
+      "id": "98a5be38-5cbb-4bea-ae58-9c2c084e06fd",
+      "name": "MCP Impower (Hausverwalter-Tool)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "IvHL3uL7oIKfyzGG",
+          "name": "Impower MCP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Stellt einen HTTP Request gege die Impower Api, um über den Priaten Endpunkt an den Exchange pla und somit miethöhen zu gelannge.",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        80,
+        1488
+      ],
+      "id": "9083bae8-e0c1-4a64-bbc9-761974351949",
+      "name": "Impower APi Exchange Plan",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Übergebenes Dokument: {{ $json.text }}\nÜbergebener Autor: {{ $('Loop Over Items').item.json.autor }}",
+        "options": {
+          "systemMessage": "=# Systemprompt – Nebenkosten-Datenbeschaffung (MINIMAL)\n\n## Rolle\nDu bist ein **technischer Datenbeschaffungs-Agent** für eine Immobilienverwaltung.\n\nDeine Aufgabe ist es, **ausschließlich strukturierte Rohdaten** aus:\n- dem übergebenen Dokument\n- dem MCP Impower (Hausverwalter-Tool)\n- der Impower API Exchange Plan Schnittstelle\n\nzu ermitteln und gesammelt zurückzugeben.\n\n---\n\n## Ziel\nErmittle zu der im Dokument genannten Adresse alle relevanten **Vertrags-, Objekt- und Zahlungsdaten**, die später für eine Nebenkostenvorauszahlungserhöhung benötigt werden.\n\n---\n\n## Verbindliche Ausführungslogik (NICHT ABWEICHEN)\n\nDer folgende Ablauf ist strikt sequenziell.\nEin Schritt gilt erst als abgeschlossen, wenn alle Pflichtfelder erfolgreich ermittelt wurden.\n\n### STATE 1 – Dokument-Parsing\nPflichtfelder:\n- person.name\n- person.street\n- person.postal_code\n- person.city\n\n→ Wenn eines fehlt: ABBRUCH mit Fehlerstatus\n\n---\n\n### STATE 2 – MCP CONTACT\nPflicht:\n- Suche exakt nach Name + Adresse\n- minNameMatchScore ≥ 0.8\n\n→ Wenn kein Treffer: Abfrage mit exakt dem vollständigenNamen wiederholen!\n→ Wenn mehrere Treffer: Abfrage mit exakt dem vollständigenNamen wiederholen!\n\n#### Versuch 3 – Adressvalidierung (Fallback)\n- Suche nach:\n  - Vorname + Nachname\n  - minNameMatchScore ≥ 0.7\n  - size = 10\n\nNachfilter:\n- Mindestens EINES der folgenden Felder muss übereinstimmen:\n  - postalCode\n  - city\n  - street (unscharfer Vergleich)\n\nWenn genau 1 valider Treffer → weiter zu STATE 3  \nSonst → ABBRUCH (CONTACT_NOT_RESOLVABLE)\n\n→ Beim dritten Suchversuch darf der Name aus dem Dokument als \"Empfängername\" interpretiert werden, auch wenn er nicht exakt Vorname + Nachname entspricht. Die Adresse dient in diesem Fall ausschließlich zur Validierung, nicht zur Suche.\n→ Wenn du nach 3 Versuchen keinen Treffer hast: Abbruch\n\n---\n\n### STATE 3 – MCP CONTRACT\nPflicht:\n- Mindestens ein Contract\n- contractId MUSS existieren\n\n→ Wenn kein Contract: ABBRUCH\n→ Wenn Contract existiert: weiter zu STATE 4\n\n---\n\n### STATE 4 – EXCHANGE PLAN (NICHT OPTIONAL)\nSobald eine `contractId` bekannt ist, rufe **zwingend** die Impower API Exchange Plan Schnittstelle auf.\n\n**Endpoint:**\nhttps://api.app.impower.de/services/pmp-accounting/api/v1/exchange-plan\n\n**Query-Parameter:**\ncontractIds={contractId}\nplanTypes=RENT_BREAKDOWN\nstates=ACTIVATED\nsize=99999\n\nPflicht:\n- API muss aufgerufen werden\n- HTTP-Status muss 2xx sein\nErmittle daraus **roh und unverändert**:\n- Monatliche Betriebskosten\n- Monatliche Heizkosten\n- Weitere vorhandene Kostenbestandteile\n\nBei Fehlerstatus (4xx / 5xx):\n- Wiederhole Anfrage bis zu 3x\n- Wenn weiterhin Fehler: ABBRUCH mit Fehlerstatus\n\n→ Leeres Ergebnis ≠ Fehler\n→ Fehlerstatus ≠ leeres Ergebnis\n\n\n---\n\n## Regeln (wichtig)\n- **Frage immer den Impower API Exchange Plan ab, sobald du vorliegende Contractinformationenn hast um alle Daten volsatändig zu erhalten**\n- Auch bei einem Inaktiven Vertrag muss Impower API Exchange Plan abgerufen werden um die dazugehörenden Daten auch aus der Vergangenheit zu erfragen\n- Nutze **ausschließlich** die genannten Tools\n- Rate keine Werte\n- Wenn Daten fehlen, gib sie explizit als fehlend an\n- Nutze keine Annahmen oder Heuristiken\n- Wenn es zu dem Contract ein Enddatum gibt, welches in der Vergangenheit liegt, musss der Vertrag auf Inactive gesetzt werden.\n\"Daten fehlen\" darf nur ausgegeben werden, wenn:\n- Der zuständige Endpoint erfolgreich (2xx) geantwortet hat\n- UND das Feld explizit leer ist\n\nAPI-Fehler dürfen NICHT als fehlende Daten interpretiert werden.\n\n\n## Verbotenes Verhalten\n- Überspringen eines States\n- Fortfahren bei API-Fehlern\n- Interpretieren von Fehlern als leere Daten\n- Ableiten fehlender Daten ohne erfolgreichen API-Call\n\n## Finaler Validierungs-Check (PFLICHT)\n\nBevor der Output erzeugt wird, prüfe:\n\n- MCP_CONTACT vorhanden? → ja/nein\n- MCP_CONTRACT vorhanden? → ja/nein\n- EXCHANGE_PLAN erfolgreich abgefragt (2xx)? → ja/nein\n\nWenn eines davon = nein:\n→ KEIN Output\n→ Stattdessen: ERROR_REPORT ausgeben\n\n\n## Output\nFülle mir als Output dieses Standard Output Format mit den entsprechenden Daten aus und gebe es mir als Text wieder. Hier ein Beispiel:\n\n=== DOCUMENT_PERSON ===\nname: Markus Feldmann\nstreet: Lindenstraße 45\npostal_code: 44135\ncity: Dortmund\n\n=== MCP_CONTACT ===\ncontact_id: 582913\nfirst_name: Markus\nlast_name: Feldmann\nemail: markus.feldmann@example.com\ncountry: DE\n\n=== MCP_CONTRACT ===\ncontract_id: 417892\ncontract_type: TENANT\ncontract_date: 2019-09-15\nstatus: ACTIVE\n\n=== MCP_PROPERTY ===\nobject_id: 28934\nobject_hr_id: DO45\nobject_address: Lindenstraße 45, 44135 Dortmund\nunit_id: 883201\nunit_hr_id: 02\nunit_type: Wohnung\nfloor: 2. OG\nlocation: 2. OG links\n\n=== EXCHANGE_PLAN ===\nplan_type: RENT_BREAKDOWN\nstatus: ACTIVATED\ncold_rent: 540.00\noperating_costs: 95.00\nheating_costs: 65.00\ncurrency: EUR\n\n=== META ===\nsource: impower\ndata_complete: true\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -176,
+        1248
+      ],
+      "id": "0e7893a2-b089-4aa2-82d3-8a7e02c21e0a",
+      "name": "Detail Informationen Beschaffen",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Übergeben Dokumente: {{ $('Call \\'Datei-Bild Analyse\\'').item.json.text }}\nBeschaffte Daten: {{ $json.output }}\nAutor Name: {{ $('Loop Over Items').item.json.autor }}"
+            },
+            {
+              "role": "system",
+              "content": "=# Systemprompt - Nebenkosteabrechung\nDeine aufgabe ist die berietstelllung der Benötigten Daten um Nebenkostenerhöhungsschreiben in einer Immobilienverstaltung zu erstellen.\n\n## Rolle\nDu bist ein **hochpräziser, strikt regelbasierter Fachagent für Miet- und Nebenkostenabrechnungen**.  \nDeine Aufgabe ist es, **ausschließlich** auf Basis der bereitgestellten Dokumente und der Impower-MCP-Schnittstellen ein **valide befülltes JSON** für eine *Nebenkostenvorauszahlungserhöhung* zu erzeugen.\n\nDu **darfst niemals raten, schätzen, interpretieren oder Werte plausibilisieren**.\n\n## Extraktionsregeln (VERPFLICHTEND)\n- Tool-Antworten können JSON als Text enthalten.\n  Du musst dieses JSON vollständig interpretieren.\n- Wenn Werte in Arrays enthalten sind, nutze das logisch passende Element\n  (z. B. aktive Einheit, aktiver Vertrag).\n- Wähle immer nur die Informationen, welche du benötigst um den Json vollständig befüllen zu können\n- Setze ein Feld NUR dann auf \"nicht hinterlegt\",\n  wenn du die komplette Tool-Antwort geprüft hast\n  und kein passender Wert existiert.\n\n## Vorgehensweise (VERPFLICHTEND)\n\n### Phase 1 - Dokumentenanalyse (Lesen)\nZunächst erhälst du eine Nebenkostenabrechnung des Vergangen Abrechnungszeitraums mit übergeben.\n\nExtrahiere **ausschließlich**:\n- Den vollständdigen Addressat (alle `tanent.*` informationen)\n- Abrechnungszeitraum (`billing_period.from`, `billing_period.to`)\n- Tatsächliche umlagefähige Betriebskosten (Gesamtsumme)\n- Summe der im Abrechnungszeitraum geleisteten Vorauszahlungen\n- Ergebnis der Abrechnung:\n  - Nachzahlung (+)\n  - Guthaben (-)\n\n---\n\n### Phase 2 - Date Lesen Impower (Beschaffen)\nLese nun die Werte welche avon Impower übergeben wurde und setzte diese passen in den Json ein\n\n---\n\n### Phase 3 - Berechnen der neuen Werte\nNun hast du alle bisherigen werte erhoben, und berechnest mir daraus die `new_payments`\n\n#### Monatliche Erhöhung\nmonthly_adjustment_base =\n((additional_payment / 12) wird mathematisch aufgerundet auf die nächste ganze Zahl)\nanschließend:\nmonthly_adjustment_base =\nkleinste Zahl ≥ diesem Wert, die durch 10 teilbar ist\n\nmonthly_adjustment_total =\nmonthly_adjustment_base + surcharge_flat\n\nsurcharge_flat = 10\nDieser Zuschlag ist ein fester, zusätzlicher Sicherheitsaufschlag\nund NICHT Teil der Rundungslogik.\nEr MUSS immer addiert werden, auch wenn monthly_adjustment_base\nbereits ein Vielfaches von 10 ist.\n\n#### Aufteilung Betriebskosten/Heizkosten\noperating_costs_increase = monthly_adjustment_total / 2\nheating_costs_increase   = monthly_adjustment_total / 2\n\n#### Neue Vorauszahlung\nnew_operating_costs =\nprevious_operating_costs + operating_costs_increase\n\nnew_heating_costs =\nprevious_heating_costs + heating_costs_increase\n\nmonthly_total =\nnew_operating_costs + new_heating_costs\n\n## Regeln (Verpflichtend)\n- Die Berechnung MUSS exakt in dieser Reihenfolge erfolgen.\nKein Schritt darf zusammengefasst, ausgelassen oder vereinfacht werden.\n\n\n### Datums- und Fixregeln (ohne Interpretation)\n- Um das Aktuelle Datum sicher zu wissen frage das Current Date Toll entsprechnd ab, welches das Korekte Datum liefert.\n- nachzahlung_100 = sobald der nachzahlungsbetrag (additional_payment) >= 100 Euro ist wird der Wert auf true gesetzt. Andernfalls (additional_payment<100 Euro) wird der Wert auf false gesetzt.\n- created_at = aktuelles Datum (DD.MM.YYYY)\n- document_date = aktuelles Datum (DD.MM.YYYY)\n- ALLE DATUMSFELDER MÜSSEN IM FORMAT DD.MM.YYYY AUSGEGEBEN WERDEN. ISO-FORMATE SIND VERBOTEN.\n- Das Datum muss immer in dem Deutschen Datumsformat gesetzt werden!\n- location = immer „Lünen“\n- document_type = immer „Nebenkostenvorauszahlungserhöhung“\n- Achte darauf, das immer absolut korrektes JSON zurückgegeben wird\n- wenn du unvollständioge Daten oder Fehlermeldungen übergeben bekommst stezte contract_active immer auf false\n\n### Wirksamkeit der Erhöhung\n- Ausgehend vom Aktuellen Datum der erste Tag des zweiten Folgenden Monats (wenn AJnnuar dann ab März, wenn Juni dann August, ...)\neffective_from = 01.(MONAT(created_at) + 2).JAHR(created_at)\n\n#### Beispiele\n- 21.01.2026 → 01.03.2026\n- 05.02.2026 → 01.04.2026\n\n## Ausgabe\n\nGib ausschließlich ein valides JSON-Objekt zurück.\nKein Text, keine Erklärung, kein Wrapper.\nKein Feld \"output\".\n\nDer Json soll naher so aufgebaut sein:\n{\n  \"meta\": {\n    \"nachzahlung_100\": true,\n    \"contract_active\": true,\n    \"document_type\": \"Nebenkostenvorauszahlungserhöhung\",\n    \"created_at\": \"2026-02-01\",\n    \"author_name\": \"Max Mustermann\",\n    \"location\": \"Lünen\"\n  },\n\n  \"tenant\": {\n    \"name\": \"Erika Musterfrau\",\n    \"street\": \"Musterstraße 12\",\n    \"postal_code\": \"44534\",\n    \"city\": \"Lünen\"\n  },\n\n  \"property\": {\n    \"address\": \"Musterstraße 12\",\n    \"unit\": \"2. OG links\",\n    \"contract_date\": \"15.03.2021\"\n  },\n\n  \"billing_period\": {\n    \"from\": \"01.01.2024\",\n    \"to\": \"31.12.2024\"\n  },\n\n  \"previous_payments\": {\n    \"monthly_operating_costs\": 120.00,\n    \"monthly_heating_costs\": 80.00,\n    \"total_paid\": 2400.00\n  },\n\n  \"actual_costs\": {\n    \"total_operating_costs\": 2850.00\n  },\n\n  \"billing_result\": {\n    \"additional_payment\": 450.00\n  },\n\n  \"adjustment_calculation\": {\n    \"monthly_adjustment_total\": 50.00\n  },\n\n  \"new_payments\": {\n    \"monthly_operating_costs\": 145.00,\n    \"monthly_heating_costs\": 105.00,\n    \"monthly_total\": 250.00\n  },\n\n  \"effectiveness\": {\n    \"effective_from\": \"01.04.2026\"\n  }\n}"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        192,
+        1248
+      ],
+      "id": "4466bf82-0f60-4de6-af49-42cef2fd2382",
+      "name": "Dokumenteninput vorbereiten",
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. KI-Gesamtresponse aus n8n holen\nconst aiResponse = items[0].json;\n\n// 2. Textfeld mit ```json ... ``` extrahieren\nconst text =\n  aiResponse?.output?.[0]?.content?.[0]?.text;\n\nif (!text || typeof text !== 'string') {\n  throw new Error('No output text found in AI response');\n}\n\n// 3. ```json Codeblock sauber entfernen\nconst jsonString = text\n  .replace(/```json\\s*/i, '')\n  .replace(/```$/, '')\n  .trim();\n\n// 4. In echtes JSON parsen\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonString);\n} catch (e) {\n  throw new Error('Invalid JSON from AI: ' + e.message);\n}\n\n// 5. Als echtes n8n-Item zurückgeben\nreturn [\n  {\n    json: parsed\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        1248
+      ],
+      "id": "70b63238-b74a-4612-a880-54d4126241a9",
+      "name": "Output zu JSON"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "67e9fc89-7dd5-4c85-b225-4afecdde7c08",
+              "leftValue": "={{ $json.meta.nachzahlung_100 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "62dc80b5-2b3f-410a-a92c-e8941bd6bbe6",
+              "leftValue": "={{ $json.meta.contract_active }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        1248
+      ],
+      "id": "603c4419-fbaa-4a47-a47c-19b424c5094c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "Nebenkostenerhöhungen",
+        "bodyContent": "Hier sind deine Nebenkostenerhöhungen.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        1008
+      ],
+      "id": "1d03772e-c341-4cc3-b93f-ae94c1012c28",
+      "name": "Create a draft",
+      "webhookId": "699b869d-0c4e-4924-8cb9-1c78e8c17a29",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "Dokumente",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1264,
+        480
+      ],
+      "id": "d89282e4-0004-4e52-a299-8f4917f28054",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1840,
+        1232
+      ],
+      "id": "8ea64d48-7369-4d21-8db2-f6adfc82e186",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/users/admin@hoewer-roth-immobilien.de/messages/{{ $node[\"Create a draft\"].json.id }}/attachments\n\n",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"@odata.type\": \"microsoft.graph.fileAttachment\",\n  \"name\": \"Nebenkostenvorauszahlungserhöhung_{{ $json.tenant.name }}.pdf\",\n  \"contentType\": \"application/pdf\",\n  \"contentBytes\": \"{{ $json.data.replace(/\\\\s+/g, '') }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2048,
+        1232
+      ],
+      "id": "63a95a04-f00a-4d3e-bbe7-46bc9202e1e0",
+      "name": "Anhang hinzufügen",
+      "credentials": {
+        "microsoftOAuth2Api": {
+          "id": "Giwhyorjb2ikNQHh",
+          "name": "Microsoft Graph Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "update",
+        "draftId": {
+          "__rl": true,
+          "value": "={{ $node[\"Create a draft\"].json.id }}",
+          "mode": "id"
+        },
+        "updateFields": {
+          "bodyContent": "={{ $json.body.content }}"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        1392
+      ],
+      "id": "77e5c511-06ee-461a-9b1d-461b03d81f18",
+      "name": "Update a draft",
+      "webhookId": "7b6f0ad9-0d61-4949-986e-86e176b8a03d",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "get",
+        "draftId": {
+          "__rl": true,
+          "value": "={{ $node[\"Create a draft\"].json.id }}",
+          "mode": "id"
+        },
+        "output": "fields",
+        "fields": [
+          "body"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        992,
+        1392
+      ],
+      "id": "095e14a5-a518-44b4-ba36-58e682210530",
+      "name": "Get a draft",
+      "webhookId": "43d5f90d-96b2-4ca0-8c6e-dc50759cc801",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const draftEmail = $input.all()[0].json;\nconst outputJson = $(\"Output zu JSON\").all()[0].json;\n\nif (!outputJson.meta.nachzahlung_100 || !outputJson.meta.contract_active) {\n  const reason = `Das Dokument ${outputJson.tenant.name} konnte nicht erstellt werden: Nachzahlung >= 100€ ${outputJson.meta.nachzahlung_100}; Vertrag Aktiv ${outputJson.meta.contract_active}.`;\n  draftEmail.body.content += `\\n\\n${reason}`;\n}\n\nreturn [{ json: draftEmail }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        1392
+      ],
+      "id": "cabc8dfa-f74e-4233-a498-b7a503653f30",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "update",
+        "draftId": {
+          "__rl": true,
+          "value": "={{ $node[\"Create a draft\"].json.id }}",
+          "mode": "id"
+        },
+        "updateFields": {
+          "bodyContent": "={{ $json.body.content }}"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        1232
+      ],
+      "id": "d8f0a55c-93ff-4fa7-9b60-27f4cbe86583",
+      "name": "Update a draft1",
+      "webhookId": "7b6f0ad9-0d61-4949-986e-86e176b8a03d",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "get",
+        "draftId": {
+          "__rl": true,
+          "value": "={{ $node[\"Create a draft\"].json.id }}",
+          "mode": "id"
+        },
+        "output": "fields",
+        "fields": [
+          "body"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        992,
+        1232
+      ],
+      "id": "4a8b6d6c-ab13-43c2-ab9d-cd84cddd420a",
+      "name": "Get a draft1",
+      "webhookId": "43d5f90d-96b2-4ca0-8c6e-dc50759cc801",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const draftEmail = $input.all()[0].json;\nconst outputJson = $(\"Output zu JSON\").first().json;\n\n// Absicherung\nif (!draftEmail.body?.content) {\n  draftEmail.body = {\n    contentType: \"text\",\n    content: \"\"\n  };\n}\n\nconst reason = `Das Dokument für ${outputJson.tenant?.name ?? \"unbekannt\"} wurde erstellt und angehangen.`;\n  draftEmail.body.content += `\\n\\n${reason}`;\n\nreturn [{ json: draftEmail }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        1232
+      ],
+      "id": "26f5653a-297d-4823-9000-f750b8c53a7d",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "includeTime": false,
+        "options": {
+          "timezone": "Europe/Berlin"
+        }
+      },
+      "type": "n8n-nodes-base.dateTimeTool",
+      "typeVersion": 2,
+      "position": [
+        304,
+        1440
+      ],
+      "id": "d5dec860-af0d-4619-aa5c-26a8f29fad92",
+      "name": "Current Date"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "send",
+        "draftId": {
+          "__rl": true,
+          "value": "={{ $item(0).$node[\"Create a draft\"].json.id }}",
+          "mode": "id"
+        },
+        "to": "mieter@hoewer-roth-immobilien.de"
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        992
+      ],
+      "id": "41a2c80a-a31a-4053-b11c-ca0316acd2fa",
+      "name": "Send a draft",
+      "webhookId": "853096df-e9b7-4483-a4d9-c4ce728e0436",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## E-Mail erstellen & Dokumente auftrennen",
+        "height": 768,
+        "width": 480,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1280,
+        864
+      ],
+      "typeVersion": 1,
+      "id": "042d8fdb-09ef-4880-b66d-82dc4c690c8f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Start und Eingabe der Dateien",
+        "height": 768,
+        "width": 224,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1520,
+        864
+      ],
+      "typeVersion": 1,
+      "id": "34cbb8c1-e664-4b82-9aeb-d769d280ac2a",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Loop Verarbeitungs beginn\n\n### Ablauf\n1. Dokumente in den Loop geben\n2. Dokumente einlesen lassen\n\nNach dem Loop\n--> E-Mail Draft absenden",
+        "height": 768,
+        "width": 512,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -784,
+        864
+      ],
+      "typeVersion": 1,
+      "id": "2dbd3734-6d9a-48af-bb57-e57dc02a623d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Ai Verarbeitung der Daten\n\n### Ablauf\n1. Ai Agent Analysiert Eingabedokument und beschafft fehlende Informationen von der Impower Schnittstelle\n2. Ai Node Analysiert beschaffte Informationen (Inklusive Eingabedokument), Berechnet neue Nebenkosten & Erstellt benötigtes JSON für das erstellen des Dokuments\n3. Code Node Parst JSON für weitere Verarbeitung\n",
+        "height": 768,
+        "width": 976,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -256,
+        864
+      ],
+      "typeVersion": 1,
+      "id": "5e463848-dcb5-4835-9ea6-7ce127147d61",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Validierung\n\nAblauf:\n1. IF überprüft, ob Dokument erstellt werden muss\nFür beide Pfade\n2. Aktueller Body des Drafts wird geladen\n3. Code Hängt Information zu aktuellem Dokument an\n4. Body wird neu ins Draft geschrieben",
+        "height": 768,
+        "width": 832,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        736,
+        864
+      ],
+      "typeVersion": 1,
+      "id": "008bae1d-3d51-4600-a346-3956164798eb",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Dokument erzeugen\n\nAblauf:\n1.  JSON wird nach APITemplate.io übergeben und Dokument aus Vorlage generiert\n2. Dokument wird zu BASE64 geparset\n3. Dokument wird dem Draft angehangen",
+        "height": 768,
+        "width": 832,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1584,
+        864
+      ],
+      "typeVersion": 1,
+      "id": "89a4bfc8-edaa-47e7-9f8b-039aab6a9d2c",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "### Output",
+        "height": 176,
+        "width": 208,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -496,
+        944
+      ],
+      "typeVersion": 1,
+      "id": "dc64727a-a1e2-4b4c-aa0e-3d90d374e53d",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Hold",
+        "height": 784,
+        "width": 1584
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "6a116f3d-b50c-4516-a35a-f6324540bbc2",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "formTitle": "Nebenkostenabrechnungserhöhung",
+        "formDescription": "Lade die Nebenkostenabrechnung des bisherigen Abrechnung Zeitraums hier hoch.\n Als Ergebnis dieses Workflows erhältst du eine E-Mail im Mieter Postfach.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nebenkostenabrechnung",
+              "fieldType": "file",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Autor",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -1440,
+        1120
+      ],
+      "id": "a9987882-3b66-470d-8bae-d86da21c8474",
+      "name": "On form submission",
+      "webhookId": "0e1c250c-9f58-45a4-b7a4-975b27ab58b7"
+    }
+  ],
+  "connections": {
+    "Dateien Aufspliten": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Send a draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'Datei-Bild Analyse'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Datei-Bild Analyse'": {
+      "main": [
+        [
+          {
+            "node": "Detail Informationen Beschaffen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Impower (Hausverwalter-Tool)3": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impower APi Exchange Plan2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Detail Informationen Beschaffen",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Impower (Hausverwalter-Tool)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Detail Informationen Beschaffen",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impower APi Exchange Plan": {
+      "ai_tool": [
+        [
+          {
+            "node": "Detail Informationen Beschaffen",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a pdf": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detail Informationen Beschaffen": {
+      "main": [
+        [
+          {
+            "node": "Dokumenteninput vorbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dokumenteninput vorbereiten": {
+      "main": [
+        [
+          {
+            "node": "Output zu JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output zu JSON": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get a draft1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Anhang hinzufügen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Dateien Aufspliten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a draft": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a draft": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a draft1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Update a draft1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a draft1": {
+      "main": [
+        [
+          {
+            "node": "Create a pdf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anhang hinzufügen": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Current Date": {
+      "ai_tool": [
+        [
+          {
+            "node": "Dokumenteninput vorbereiten",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Dateien Aufspliten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "__backupMeta": {
+    "archived": false,
+    "active": false,
+    "workflowId": "k5Q93B8RSfj7BCeL"
+  }
+}
