@@ -49,10 +49,10 @@
         },
         "repository": {
           "__rl": true,
-          "value": "n8n-Backup-self-hosted",
+          "value": "n8n-backup-self-hosted",
           "mode": "list",
-          "cachedResultName": "n8n-Backup-self-hosted",
-          "cachedResultUrl": "https://github.com/HR-Immo/n8n-Backup-self-hosted"
+          "cachedResultName": "n8n-backup-self-hosted",
+          "cachedResultUrl": "https://github.com/HR-Immo/n8n-backup-self-hosted"
         },
         "filePath": "="
       },
@@ -84,10 +84,10 @@
         },
         "repository": {
           "__rl": true,
-          "value": "n8n-Backup-self-hosted",
+          "value": "n8n-backup-self-hosted",
           "mode": "list",
-          "cachedResultName": "n8n-Backup-self-hosted",
-          "cachedResultUrl": "https://github.com/HR-Immo/n8n-Backup-self-hosted"
+          "cachedResultName": "n8n-backup-self-hosted",
+          "cachedResultUrl": "https://github.com/HR-Immo/n8n-backup-self-hosted"
         },
         "filePath": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json",
         "fileContent": "={{ $('To base64').item.json.data }}",
@@ -119,10 +119,10 @@
         },
         "repository": {
           "__rl": true,
-          "value": "n8n-Backup-self-hosted",
+          "value": "n8n-backup-self-hosted",
           "mode": "list",
-          "cachedResultName": "n8n-Backup-self-hosted",
-          "cachedResultUrl": "https://github.com/HR-Immo/n8n-Backup-self-hosted"
+          "cachedResultName": "n8n-backup-self-hosted",
+          "cachedResultUrl": "https://github.com/HR-Immo/n8n-backup-self-hosted"
         },
         "filePath": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json",
         "fileContent": "={{ $('To base64').item.json.data }}",
@@ -298,10 +298,10 @@
         },
         "repository": {
           "__rl": true,
-          "value": "n8n-Backup-self-hosted",
+          "value": "n8n-backup-self-hosted",
           "mode": "list",
-          "cachedResultName": "n8n-Backup-self-hosted",
-          "cachedResultUrl": "https://github.com/HR-Immo/n8n-Backup-self-hosted"
+          "cachedResultName": "n8n-backup-self-hosted",
+          "cachedResultUrl": "https://github.com/HR-Immo/n8n-backup-self-hosted"
         },
         "filePath": "=/archiviert"
       },
