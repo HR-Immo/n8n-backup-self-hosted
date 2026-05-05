@@ -1,0 +1,581 @@
+{
+  "name": "Image to PDF Basis",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        368
+      ],
+      "id": "1d90a859-964b-4e6d-bbd6-91924914267f",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "formTitle": "Testdokument",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Dokumente",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        224
+      ],
+      "id": "98763609-c227-4e2a-9b6f-377e69f449a4",
+      "name": "On form submission",
+      "webhookId": "000e4027-47aa-46eb-bf77-7268ccd14eef",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://api.ilovepdf.com/v1/auth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "public_key",
+              "value": "project_public_67523cf8f05be39843ad62ba9585262e_mRyaRc0a6a8a1a0115c6c19a08e31d836d34f"
+            },
+            {
+              "name": "secret_key",
+              "value": "secret_key_0c506e95e004a8695726691d5dc83186_WX92kbea4fbcf12cf2d730554bff359250f2d"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        304,
+        176
+      ],
+      "id": "bf28360f-e85f-4527-9652-b64824f04cbb",
+      "name": "iLovePDF Token hole"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alle Items holen\nconst items = $input.all();\n\n// Item mit API-Daten finden\nconst apiItem = items.find(i =>\n  i.json.token &&\n  i.json.server &&\n  i.json.task\n);\n\nif (!apiItem) {\n  throw new Error(\"API-Item (token/server/task) wurde nicht gefunden.\");\n}\n\n// Item mit Dokumente-Array finden\nconst docsItem = items.find(i =>\n  Array.isArray(i.json.Dokumente)\n);\n\nif (!docsItem) {\n  throw new Error(\"'Dokumente'-Array wurde nicht gefunden.\");\n}\n\n// Item mit echten Binary-Daten finden\nconst binaryItem = items.find(i =>\n  i.binary && Object.keys(i.binary).length > 0\n);\n\nif (!binaryItem) {\n  throw new Error(\"Binary-Item wurde nicht gefunden.\");\n}\n\n// Dokumentenliste extrahieren\nconst docs = docsItem.json.Dokumente;\n\n// Binary Keys wie: [\"Dokumente_0\", \"Dokumente_1\"]\nconst binaryKeys = Object.keys(binaryItem.binary);\n\n// Output für Split Items\nconst output = [];\n\n// MATCH PER INDEX – EINZIG RICHTIGE LÖSUNG\ndocs.forEach((doc, index) => {\n\n  const binaryKey = binaryKeys[index];\n  const binaryData = binaryItem.binary[binaryKey];\n\n  if (!binaryData) {\n    throw new Error(\n      `Binary-Daten für Index ${index} (${binaryKey}) nicht gefunden.`\n    );\n  }\n\n  output.push({\n    json: {\n      fileName: doc.filename,\n      mimeType: doc.mimetype,\n      size: doc.size,\n\n      // API-Daten\n      token: apiItem.json.token,\n      server: apiItem.json.server,\n      task: apiItem.json.task,\n    },\n    binary: {\n      data: binaryData\n    }\n  });\n});\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        368
+      ],
+      "id": "bf211582-e557-4c0d-9ed1-f39f71e6a096",
+      "name": "Dateien Aufspliten"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1360,
+        368
+      ],
+      "id": "c710854e-c063-4379-98ef-86de6ebe690a",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $json.server }}/v1/upload ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.token}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "task",
+              "value": "={{ $json.task }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "=file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $json.fileName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1552,
+        416
+      ],
+      "id": "609b0ae0-366a-4bbb-a671-e2e92cb6daf9",
+      "name": "iLovePDF Datei Upload"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2016229a-f254-415b-b219-9d089098c1a7",
+              "name": "token",
+              "value": "={{ $('iLovePDF Token hole').item.json.token }}",
+              "type": "string"
+            },
+            {
+              "id": "55205ba4-7c3c-4079-829e-01fda229d9b0",
+              "name": "server",
+              "value": "={{ $json.server }}",
+              "type": "string"
+            },
+            {
+              "id": "1fb7519b-bf30-4fa4-92b1-417284c7ace2",
+              "name": "task",
+              "value": "={{ $json.task }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        176
+      ],
+      "id": "d83128aa-b9d3-4fb8-8ebe-789b7083340a",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        944,
+        304
+      ],
+      "id": "355f3082-8058-4014-9d4f-1ada7a00c4ad",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1792,
+        272
+      ],
+      "id": "696cfc47-8266-45e3-96e0-5862e83f8601",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input ist ein Array von Items\nconst items = $input.all();\nconst json = items.map(i => i.json);\n\n// 1) Hole task, server, original filenames\n// (die stehen in den ersten beiden Objekten)\nconst token = json.find(o => o.token)?.token;\nconst task = json.find(o => o.task)?.task;\nconst server = json.find(o => o.server)?.server;\n\n// 2) Hole alle Original-Dateinamen (aus fileName)\nconst originalFilenames = json\n  .filter(o => o.fileName)\n  .map(o => o.fileName);\n\n// 3) Hole alle server_filenames (aus server_filename)\nconst serverFilenames = json\n  .filter(o => o.server_filename)\n  .map(o => o.server_filename);\n\n// 4) Baue das required \"files\"-Array im iLovePDF Format\nconst files = serverFilenames.map((serverFilename, i) => ({\n  server_filename: serverFilename,\n  filename: originalFilenames[i] || `file_${i+1}.pdf`\n}));\n\n// 5) Rückgabe im korrekten Format\nreturn [\n  {\n    json: {\n      token,\n      task,\n      server,\n      files\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        272
+      ],
+      "id": "bc6b8260-fb71-49f9-9af3-114c14379cdd",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $('Code in JavaScript').item.json.server }}/v1/download/{{ $('Code in JavaScript').item.json.task }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Code in JavaScript').item.json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2352,
+        272
+      ],
+      "id": "4ed1ae75-3922-4f79-ab7d-b1708a777b1c",
+      "name": "iLove PDF Download File"
+    },
+    {
+      "parameters": {
+        "content": "## Start und Eingabe der Dateien",
+        "height": 624,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "dc4923ca-245d-4d3e-908e-5447277fccec",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Autohrisieren gegenüber der iLovePDF API\n\n### Ablauf:\n1. Holen eines Tokens per API Key --> Token\n2. Initiieren eines Merges Tasks --> Task ID, Task Server",
+        "height": 624,
+        "width": 640,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "549e309f-8274-4452-8bee-bcc6ef54fb97",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Breistellen der korrekten Binary Items\n\n### Ablauf:\n1. Binarys und API Daten werden verknüpft\n2. Code zerteilt Binarys in Items, und gibt jedem Item die API Daten mit",
+        "height": 624,
+        "width": 352,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        912,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "cbdb4dd5-62c2-45f4-a1ec-24f953daee4c",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Upload der Binarys\n\n### Ablauf:\nÜber Loop werden jeweils die Binarys der API hochgeladen\n\nggf. if not pdf dann to pdf task einbauen",
+        "height": 624,
+        "width": 432,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1280,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "fb66c777-3ef3-462d-b30b-3b421bdf1729",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## API Merge Tas ausführen lassen\n\n### Ablauf:\n1. File Daten (& API Session Daten) werden mit API File IDs verknüpft\n2. Code erzeugt aus alles vorliegenden Daten die korrekte Struktur, sodass wir ein Array mit files welches file IDs passend zu file Namen enthält.\n3. Zusammen mit der Information über die Files wird der konkrete Merge Task angestoßen ",
+        "height": 624,
+        "width": 576,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1728,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "62935245-439a-465c-83af-4d4245bf26fa",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## File Download von API\n\n### Ablauf:\nDie neu erstellte File wird nun von der API gedownloaded.",
+        "height": 624,
+        "width": 288,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2320,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "3346c1e2-d8e1-48df-9780-1c0cd800e17a",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "url": "https://api.ilovepdf.com/v1/start/imagepdf/de",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.token}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        496,
+        176
+      ],
+      "id": "4a8e9db9-864b-49e3-8599-872e509e90c5",
+      "name": "iLovePDF Task erstellen"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $json.server}}/v1/process",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "task",
+              "value": "={{ $json.task}}"
+            },
+            {
+              "name": "tool",
+              "value": "=imagepdf"
+            },
+            {
+              "name": "files",
+              "value": "={{ $json.files }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        272
+      ],
+      "id": "dc39e992-d43d-4035-8594-b589767f0cec",
+      "name": "iLovePDF Task ausführen"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =====================================================\n// 1. Alle Input-Items holen\n// =====================================================\nconst items = $input.all();\n\n// =====================================================\n// 2. API-Item finden (token / server / task)\n// =====================================================\nconst apiItem = items.find(i =>\n  i.json?.token &&\n  i.json?.server &&\n  i.json?.task\n);\n\nif (!apiItem) {\n  throw new Error(\"API-Item (token/server/task) wurde nicht gefunden.\");\n}\n\n// =====================================================\n// 3. Dokument-Item finden (fileName/mimeType ODER filename/mimetype)\n// =====================================================\nconst docItem = items.find(i =>\n  (\n    (i.json?.fileName && i.json?.mimeType) ||\n    (i.json?.filename && i.json?.mimetype)\n  )\n);\n\nif (!docItem) {\n  throw new Error(\n    \"Dokument-Item wurde nicht gefunden (fileName/mimeType oder filename/mimetype).\"\n  );\n}\n\n// =====================================================\n// 4. Dokument-Felder normalisieren\n// =====================================================\nconst fileName =\n  docItem.json.fileName ??\n  docItem.json.filename ??\n  null;\n\nconst mimeType =\n  docItem.json.mimeType ??\n  docItem.json.mimetype ??\n  null;\n\nconst size =\n  docItem.json.size ??\n  null;\n\n// =====================================================\n// 5. Binary robust ermitteln\n//    - binary.data\n//    - binary.file\n//    - erstes vorhandenes Binary-Feld\n// =====================================================\nlet binaryData = null;\n\nif (docItem.binary) {\n  if (docItem.binary.data) {\n    binaryData = docItem.binary.data;\n  } else if (docItem.binary.file) {\n    binaryData = docItem.binary.file;\n  } else {\n    const binaryValues = Object.values(docItem.binary);\n    if (binaryValues.length > 0) {\n      binaryData = binaryValues[0];\n    }\n  }\n}\n\nif (!binaryData) {\n  throw new Error(\"Binary-Daten wurden nicht gefunden.\");\n}\n\n// =====================================================\n// 6. EIN sauberes Output-Item zurückgeben\n// =====================================================\nreturn [\n  {\n    json: {\n      fileName,\n      mimeType,\n      size,\n      token: apiItem.json.token,\n      server: apiItem.json.server,\n      task: apiItem.json.task,\n    },\n    binary: {\n      data: binaryData\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        224
+      ],
+      "id": "84284968-010c-469a-9a34-030846456468",
+      "name": "Dateien Aufspliten1"
+    }
+  ],
+  "connections": {
+    "iLovePDF Token hole": {
+      "main": [
+        [
+          {
+            "node": "iLovePDF Task erstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "iLovePDF Token hole",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "iLovePDF Token hole",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "iLovePDF Datei Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iLovePDF Datei Upload": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Dateien Aufspliten1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "iLovePDF Task ausführen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iLovePDF Task erstellen": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iLovePDF Task ausführen": {
+      "main": [
+        [
+          {
+            "node": "iLove PDF Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dateien Aufspliten1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {},
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T19:23:09.277Z",
+      "createdAt": "2026-03-10T19:23:09.277Z",
+      "id": "swUGLTcrmOPf6Rzt",
+      "name": "Helper"
+    }
+  ],
+  "__backupMeta": {
+    "archived": false,
+    "active": false,
+    "workflowId": "6XglicJYgtFMzElR"
+  }
+}
