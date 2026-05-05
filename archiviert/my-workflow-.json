@@ -1,0 +1,30 @@
+{
+  "name": "Archiviert/My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3cb7b6ca-d6f1-4c98-ae04-57d89906a461",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {},
+  "tags": [],
+  "__backupMeta": {
+    "archived": true,
+    "active": false,
+    "workflowId": "J8oYwMmFTNm4AJyz"
+  }
+}
