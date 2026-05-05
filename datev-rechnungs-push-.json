@@ -1,0 +1,1031 @@
+{
+  "name": "Datev Rechnungs Push",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "4e19bd58-076b-4273-b6a5-518ee2564fb7",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        16
+      ],
+      "id": "9444ba89-b4fe-42f6-ad9b-6a760adfda4a",
+      "name": "Webhook",
+      "webhookId": "4e19bd58-076b-4273-b6a5-518ee2564fb7"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -368
+      ],
+      "id": "bdcafef1-ca7d-4f52-b49d-a5d56e0533ff",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://api.app.impower.de/v2/invoices",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        16,
+        -432
+      ],
+      "id": "09a392a8-7f76-47d0-9391-2002d9ee7bec",
+      "name": "Get Invoices",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/invoices/{{ $json.content[20].id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        -432
+      ],
+      "id": "3b838626-34d2-4de3-bb93-8fa4b7df087e",
+      "name": "Get Invoice2",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/invoices/{{ $('Webhook').item.json.body.entityId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1d2f2441-ecad-45f2-be53-eaf3b627d3c2",
+      "name": "Get Invoice",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.app.impower.de/v2/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.propertyName\n  .normalize('NFKC')\n  .replace(/[\\u200B-\\u200D\\uFEFF]/g, '')\n  .replace(/\\u00A0/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim()\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        368,
+        -592
+      ],
+      "id": "d72efe59-90eb-4d0e-8a28-a374768bd794",
+      "name": "Get Conntact2",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/documents",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "sourceId",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        368,
+        -432
+      ],
+      "id": "9d56dbf9-eb0b-4967-8394-e0166dc8a3f3",
+      "name": "get dokument2",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.app.impower.de/v2/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $('Get Invoice').item.json.propertyName\n  .normalize('NFKC')\n  .replace(/[\\u200B-\\u200D\\uFEFF]/g, '')\n  .replace(/\\u00A0/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim()\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        736,
+        -16
+      ],
+      "id": "07963634-30ef-4b9f-90db-a6a3c87d6c2c",
+      "name": "Get Conntact",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/documents",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "sourceId",
+              "value": "={{ $('Get Invoice').item.json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        736,
+        144
+      ],
+      "id": "5a08bf38-03d6-464e-9804-76c7815244ee",
+      "name": "get dokument",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/documents/{{ $json.content[0].id }}/download",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "sourceId",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        -432
+      ],
+      "id": "ee806dd8-805e-4826-a6e1-3012e17db59c",
+      "name": "download dokument2",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/documents/{{ $json.content[0].id }}/download",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "sourceId",
+              "value": "={{ $json.content[0].sourceId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        944,
+        368
+      ],
+      "id": "15a21bde-e923-443f-ad0f-3d166cb3610d",
+      "name": "download dokument",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        848,
+        -496
+      ],
+      "id": "194ec1b0-9535-4c91-8f41-1c08eae37647",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1440,
+        0
+      ],
+      "id": "b9ef69ef-15ee-4334-aaea-34f4152358ea",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "toRecipients": "=admin@hoewer-roth-immobilien.de",
+        "subject": "Buchung einer Rechnung",
+        "bodyContent": "={{ $json.content[0].details.email[0] }}\nSehr geehrte Damen & Herren,\n\nsoeben haben wir für unseren Kunden die Buchgung der angehangenen Rechnung in Auftrag gegeben.\n\nMit freundlichen Grüßen\nIhr Höwer & Roth Immobilien Team",
+        "additionalFields": {
+          "attachments": {
+            "attachments": [
+              {
+                "binaryPropertyName": "data"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -496
+      ],
+      "id": "09f0ad83-6a70-4d98-823e-dc1812396ac2",
+      "name": "Send a message2",
+      "webhookId": "c3f57d03-a1ae-40f4-bb36-4723412ab530",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toRecipients": "=admin@hoewer-roth-immobilien.de",
+        "subject": "Buchung einer Rechnung Test",
+        "bodyContent": "=Kontakt: {{ $json.content[0].details.email[0] }}\nSehr geehrte Damen & Herren,\n\nsoeben haben wir für unseren Kunden die Buchgung der angehangenen Rechnung in Auftrag gegeben.\n\nMit freundlichen Grüßen\nIhr Höwer & Roth Immobilien Team",
+        "additionalFields": {
+          "attachments": {
+            "attachments": [
+              {
+                "binaryPropertyName": "attachment_1"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        -288
+      ],
+      "id": "c5aafaab-f7d2-4f97-b153-2313c3084cf1",
+      "name": "Send a message",
+      "webhookId": "c3f57d03-a1ae-40f4-bb36-4723412ab530",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bb321050-4235-4919-8481-4ac01ce352d1",
+              "leftValue": "={{ $json.state }}",
+              "rightValue": "BOOKED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        384,
+        0
+      ],
+      "id": "47a25462-3ae4-4d5e-883a-b0d680bdc4fe",
+      "name": "State Booked"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e89c8f97-ad60-4948-97ec-db799e4736ba",
+              "leftValue": "={{ $json.body.entityType }}",
+              "rightValue": "invoices",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "22bc6d28-ecb7-45de-9ac5-3646c33b6f30",
+              "leftValue": "={{ $json.body.eventType }}",
+              "rightValue": "UPDATE",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -32,
+        16
+      ],
+      "id": "9dfc73f5-e474-4a73-9945-245b74f57e5e",
+      "name": "Type Invoices & Update"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "content",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        928,
+        144
+      ],
+      "id": "6bc1714e-72c7-4c65-9d2e-9e6a350415fc",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/documents/{{ $json.id }}/download",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "sourceId",
+              "value": "={{ $json.sourceId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        144
+      ],
+      "id": "e37931e6-664b-4350-8338-0894fcb27aa3",
+      "name": "download dokument1",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const merged = {\n  json: {\n    attachmentCount: 0,\n  },\n  binary: {},\n};\n\nlet counter = 1;\n\nfor (const item of items) {\n  if (item.binary?.data) {\n    const key = `attachment_${counter}`;\n    merged.binary[key] = item.binary.data;\n    counter++;\n  }\n}\n\nmerged.json.attachmentCount = counter - 1;\n\nreturn [merged];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        144
+      ],
+      "id": "b7bd6d51-7e6d-46bc-84b4-649ec347878d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.attachmentCount }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "257f25c3-94c7-4bef-85e3-6c782f0cefe9"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9d8404ac-e44e-47a2-a5e1-9ecd2fbf911a",
+                    "leftValue": "={{ $json.attachmentCount }}",
+                    "rightValue": 2,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "40419ae4-3cae-401f-aefa-4c32d3099d8c",
+                    "leftValue": "={{ $json.attachmentCount }}",
+                    "rightValue": 3,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9315f213-3450-4c98-ad7f-aa606125cf89",
+                    "leftValue": "={{ $json.attachmentCount }}",
+                    "rightValue": 4,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1632,
+        -32
+      ],
+      "id": "e3b46a4d-90f4-45f3-bca0-70dd63a4cf76",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "toRecipients": "=admin@hoewer-roth-immobilien.de",
+        "subject": "Buchung einer Rechnung Test",
+        "bodyContent": "=Kontakt: {{ $json.content[0].details.email[0] }}\nSehr geehrte Damen & Herren,\n\nsoeben haben wir für unseren Kunden die Buchgung der angehangenen Rechnung in Auftrag gegeben.\n\nMit freundlichen Grüßen\nIhr Höwer & Roth Immobilien Team",
+        "additionalFields": {
+          "attachments": {
+            "attachments": [
+              {
+                "binaryPropertyName": "attachment_1"
+              },
+              {
+                "binaryPropertyName": "attachment_2"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        -96
+      ],
+      "id": "4393ac73-c676-48a2-86f5-864e5e1293b8",
+      "name": "Send a message1",
+      "webhookId": "c3f57d03-a1ae-40f4-bb36-4723412ab530",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toRecipients": "=admin@hoewer-roth-immobilien.de",
+        "subject": "Buchung einer Rechnung Test",
+        "bodyContent": "=Kontakt: {{ $json.content[0].details.email[0] }}\nSehr geehrte Damen & Herren,\n\nsoeben haben wir für unseren Kunden die Buchgung der angehangenen Rechnung in Auftrag gegeben.\n\nMit freundlichen Grüßen\nIhr Höwer & Roth Immobilien Team",
+        "additionalFields": {
+          "attachments": {
+            "attachments": [
+              {
+                "binaryPropertyName": "attachment_1"
+              },
+              {
+                "binaryPropertyName": "attachment_2"
+              },
+              {
+                "binaryPropertyName": "attachment_3"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        96
+      ],
+      "id": "5313e674-52d3-48b9-8a6d-c5af70cf1500",
+      "name": "Send a message3",
+      "webhookId": "c3f57d03-a1ae-40f4-bb36-4723412ab530",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toRecipients": "=admin@hoewer-roth-immobilien.de",
+        "subject": "Buchung einer Rechnung Test",
+        "bodyContent": "=Kontakt: {{ $json.content[0].details.email[0] }}\nSehr geehrte Damen & Herren,\n\nsoeben haben wir für unseren Kunden die Buchgung der angehangenen Rechnung in Auftrag gegeben.\n\nMit freundlichen Grüßen\nIhr Höwer & Roth Immobilien Team",
+        "additionalFields": {
+          "attachments": {
+            "attachments": [
+              {
+                "binaryPropertyName": "attachment_1"
+              },
+              {
+                "binaryPropertyName": "attachment_2"
+              },
+              {
+                "binaryPropertyName": "attachment_3"
+              },
+              {
+                "binaryPropertyName": "attachment_4"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        288
+      ],
+      "id": "d9d297d3-db98-4b5e-ad67-8bdfdc02e58e",
+      "name": "Send a message4",
+      "webhookId": "c3f57d03-a1ae-40f4-bb36-4723412ab530",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Invoices": {
+      "main": [
+        [
+          {
+            "node": "Get Invoice2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Type Invoices & Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Invoice2": {
+      "main": [
+        [
+          {
+            "node": "get dokument2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Conntact2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Invoice": {
+      "main": [
+        [
+          {
+            "node": "State Booked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conntact2": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get dokument2": {
+      "main": [
+        [
+          {
+            "node": "download dokument2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conntact": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get dokument": {
+      "main": [
+        [
+          {
+            "node": "download dokument",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download dokument2": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "download dokument": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "State Booked": {
+      "main": [
+        [
+          {
+            "node": "Get Conntact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "get dokument",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Type Invoices & Update": {
+      "main": [
+        [
+          {
+            "node": "Get Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "download dokument1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download dokument1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.hoewer-roth-immobilien.de",
+            "user-agent": "Java/11.0.30",
+            "content-length": "102",
+            "accept": "text/plain, application/xml, text/xml, application/json, application/*+xml, application/*+json, */*",
+            "authorization": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJqLmxvcnNjaGVpZGVyQGhvZXdlci1yb3RoLWltbW9iaWxpZW4uZGUiLCJ0b2tlblR5cGUiOiJSRUZSRVNIX1RPS0VOIiwiZG9tYWluSWQiOjEwOTksInVzZXJJZCI6MTA1MjcsImV4cCI6MTc3NjI1NzAxMX0.NkiKY395ooforpDiJSoByz9EyFZWEhSB8AsZga3fdiGxf3-PNizXN8GWTBMFZCk6gtLCIhrb5FwS7lrv5ndg6w",
+            "content-type": "application/json",
+            "via": "1.1 Caddy",
+            "x-b3-parentspanid": "f6263337ab77dc5a",
+            "x-b3-sampled": "0",
+            "x-b3-spanid": "841b756e75ba952f",
+            "x-b3-traceid": "a77e8dc96537a4bd",
+            "x-forwarded-for": "3.124.154.181",
+            "x-forwarded-host": "n8n.hoewer-roth-immobilien.de",
+            "x-forwarded-proto": "https",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "domainId": 1099,
+            "connectionId": 24083,
+            "entityType": "invoices",
+            "entityId": 2722147,
+            "eventType": "UPDATE"
+          },
+          "webhookUrl": "https://n8n.hoewer-roth-immobilien.de/webhook/4e19bd58-076b-4273-b6a5-518ee2564fb7",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "__backupMeta": {
+    "archived": false,
+    "active": true,
+    "workflowId": "hqquSgdDSWWjVsaE"
+  }
+}
