@@ -1,0 +1,988 @@
+{
+  "name": "Merge PDFs PDF.CO",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -160,
+        1840
+      ],
+      "id": "70998656-e490-4b4b-b047-ab62a42bd138",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "formTitle": "Testdokument",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Dokumente",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        1696
+      ],
+      "id": "a14abfce-43b9-4319-a0a4-efaa751ac600",
+      "name": "On form submission",
+      "webhookId": "bb9552f7-7529-4131-8200-79d02bf8263d"
+    },
+    {
+      "parameters": {
+        "url": "https://api.ilovepdf.com/v1/auth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "public_key",
+              "value": "project_public_67523cf8f05be39843ad62ba9585262e_mRyaRc0a6a8a1a0115c6c19a08e31d836d34f"
+            },
+            {
+              "name": "secret_key",
+              "value": "secret_key_0c506e95e004a8695726691d5dc83186_WX92kbea4fbcf12cf2d730554bff359250f2d"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        48,
+        176
+      ],
+      "id": "47140b3e-4d13-47d2-9e64-276b4e5a309c",
+      "name": "iLovePDF Token hole"
+    },
+    {
+      "parameters": {
+        "url": "https://api.ilovepdf.com/v1/start/merge/de",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.token}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        176
+      ],
+      "id": "358148d4-272b-41b8-9051-7ceb58c6db7f",
+      "name": "iLovePDF Merge Task erstellen"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alle Items holen\nconst items = $input.all();\n\n// Item mit API-Daten finden\nconst apiItem = items.find(i =>\n  i.json.token &&\n  i.json.server &&\n  i.json.task\n);\n\nif (!apiItem) {\n  throw new Error(\"API-Item (token/server/task) wurde nicht gefunden.\");\n}\n\n// Item mit Dokumente-Array finden\nconst docsItem = items.find(i =>\n  Array.isArray(i.json.Dokumente) ||\n  Array.isArray(i.json.download_filename)                              \n);\n\nif (!docsItem) {\n  throw new Error(\"'Dokumente'-Array wurde nicht gefunden.\");\n}\n\n// Item mit echten Binary-Daten finden\nconst binaryItem = items.find(i =>\n  i.binary && Object.keys(i.binary).length > 0\n);\n\nif (!binaryItem) {\n  throw new Error(\"Binary-Item wurde nicht gefunden.\");\n}\n\n// Dokumentenliste extrahieren\nconst docs = docsItem.json.Dokumente;\n\n// Binary Keys wie: [\"Dokumente_0\", \"Dokumente_1\"]\nconst binaryKeys = Object.keys(binaryItem.binary);\n\n// Output für Split Items\nconst output = [];\n\n// MATCH PER INDEX – EINZIG RICHTIGE LÖSUNG\ndocs.forEach((doc, index) => {\n\n  const binaryKey = binaryKeys[index];\n  const binaryData = binaryItem.binary[binaryKey];\n\n  if (!binaryData) {\n    throw new Error(\n      `Binary-Daten für Index ${index} (${binaryKey}) nicht gefunden.`\n    );\n  }\n\n  output.push({\n    json: {\n      fileName: doc.filename,\n      mimeType: doc.mimetype,\n      size: doc.size,\n\n      // API-Daten\n      token: apiItem.json.token,\n      server: apiItem.json.server,\n      task: apiItem.json.task,\n    },\n    binary: {\n      data: binaryData\n    }\n  });\n});\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        304
+      ],
+      "id": "dae026f1-bf48-4584-9378-0a48c28ee9e9",
+      "name": "Dateien Aufspliten"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1104,
+        368
+      ],
+      "id": "64450163-8408-45c0-8745-9b0763e9c097",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $json.server }}/v1/upload ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.token}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "task",
+              "value": "={{ $json.task }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "=file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $json.fileName }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1296,
+        416
+      ],
+      "id": "607154aa-7f2a-45cf-967e-969feb60f65e",
+      "name": "iLovePDF Datei Upload"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        992,
+        976
+      ],
+      "id": "c5938143-dc16-4bf3-9127-d35115212557",
+      "name": "Merge",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4e93e2f1-c1d9-4538-97b1-2b0d008a5e53",
+              "leftValue": "={{ $binary.data }}",
+              "rightValue": "=application/pdf",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        1152
+      ],
+      "id": "e569eaad-2bd2-49ef-b5fe-d2938140cdcc",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        288,
+        880
+      ],
+      "id": "ef34341e-ed91-4793-8219-f5371c70dbb8",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "token"
+            },
+            {
+              "fieldToAggregate": "server"
+            },
+            {
+              "fieldToAggregate": "task"
+            },
+            {
+              "fieldToAggregate": "fileName"
+            },
+            {
+              "fieldToAggregate": "mimeType"
+            }
+          ]
+        },
+        "options": {
+          "includeBinaries": true
+        }
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        752,
+        944
+      ],
+      "id": "3723f3a3-8444-4307-b3ed-8ef6cdb450c7",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        544,
+        944
+      ],
+      "id": "b0fb9647-eef1-4068-a836-a3d9e765e146",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2016229a-f254-415b-b219-9d089098c1a7",
+              "name": "token",
+              "value": "={{ $('iLovePDF Token hole').item.json.token }}",
+              "type": "string"
+            },
+            {
+              "id": "55205ba4-7c3c-4079-829e-01fda229d9b0",
+              "name": "server",
+              "value": "={{ $json.server }}",
+              "type": "string"
+            },
+            {
+              "id": "1fb7519b-bf30-4fa4-92b1-417284c7ace2",
+              "name": "task",
+              "value": "={{ $json.task }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        432,
+        176
+      ],
+      "id": "1600e09b-e01f-41e2-9589-05e40c082f59",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        688,
+        304
+      ],
+      "id": "6d1c4b31-3382-4f13-8850-974ef5fb67e8",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1536,
+        272
+      ],
+      "id": "a74424db-2b49-45b4-b8e7-7fabffc91035",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input ist ein Array von Items\nconst items = $input.all();\nconst json = items.map(i => i.json);\n\n// 1) Hole task, server, original filenames\n// (die stehen in den ersten beiden Objekten)\nconst token = json.find(o => o.token)?.token;\nconst task = json.find(o => o.task)?.task;\nconst server = json.find(o => o.server)?.server;\n\n// 2) Hole alle Original-Dateinamen (aus fileName)\nconst originalFilenames = json\n  .filter(o => o.fileName)\n  .map(o => o.fileName);\n\n// 3) Hole alle server_filenames (aus server_filename)\nconst serverFilenames = json\n  .filter(o => o.server_filename)\n  .map(o => o.server_filename);\n\n// 4) Baue das required \"files\"-Array im iLovePDF Format\nconst files = serverFilenames.map((serverFilename, i) => ({\n  server_filename: serverFilename,\n  filename: originalFilenames[i] || `file_${i+1}.pdf`\n}));\n\n// 5) Rückgabe im korrekten Format\nreturn [\n  {\n    json: {\n      token,\n      task,\n      server,\n      files\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        272
+      ],
+      "id": "e03a0adb-74a0-4596-88c8-f7fec0f8d78c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $json.server}}/v1/process",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "task",
+              "value": "={{ $json.task}}"
+            },
+            {
+              "name": "tool",
+              "value": "=merge"
+            },
+            {
+              "name": "files",
+              "value": "={{ $json.files }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1904,
+        272
+      ],
+      "id": "1839657a-8b20-4703-aa79-1a595a9f76c1",
+      "name": "iLovePDF Merge Task ausführen"
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $('Code in JavaScript').item.json.server }}/v1/download/{{ $('Code in JavaScript').item.json.task }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Code in JavaScript').item.json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2128,
+        272
+      ],
+      "id": "3bfb3362-32ff-47e6-b7e7-387ac9b3925d",
+      "name": "iLove PDF Download File"
+    },
+    {
+      "parameters": {
+        "content": "## Start und Eingabe der Dateien",
+        "height": 624,
+        "width": 246,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -240,
+        1472
+      ],
+      "typeVersion": 1,
+      "id": "6af785fb-f48a-4250-a019-bcd74236d371",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Autohrisieren gegenüber der iLovePDF API\n\n### Ablauf:\n1. Holen eines Tokens per API Key --> Token\n2. Initiieren eines Merges Tasks --> Task ID, Task Server",
+        "height": 624,
+        "width": 640,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "e42d135a-5e20-429a-b16a-a795eab0c54f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Breistellen der korrekten Binary Items\n\n### Ablauf:\n1. Binarys und API Daten werden verknüpft\n2. Code zerteilt Binarys in Items, und gibt jedem Item die API Daten mit",
+        "height": 624,
+        "width": 352,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        656,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "2022a2ee-0af1-4a7e-8bc0-8f28207f9341",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Upload der Binarys\n\n### Ablauf:\nÜber Loop werden jeweils die Binarys der API hochgeladen\n\nggf. if not pdf dann to pdf task einbauen",
+        "height": 624,
+        "width": 432,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1024,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "fdd5051f-fa42-4e84-8ca6-2499309487cd",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## API Merge Tas ausführen lassen\n\n### Ablauf:\n1. File Daten (& API Session Daten) werden mit API File IDs verknüpft\n2. Code erzeugt aus alles vorliegenden Daten die korrekte Struktur, sodass wir ein Array mit files welches file IDs passend zu file Namen enthält.\n3. Zusammen mit der Information über die Files wird der konkrete Merge Task angestoßen ",
+        "height": 624,
+        "width": 576,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1472,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "5c50c36b-de77-42ba-87d4-5d9dff7745e2",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## File Download von API\n\n### Ablauf:\nDie neu erstellte File wird nun von der API gedownloaded.",
+        "height": 624,
+        "width": 288,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2064,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "637f0d70-21bb-45ad-a654-98256d51f6eb",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Hold",
+        "height": 640,
+        "width": 1472
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        32,
+        720
+      ],
+      "typeVersion": 1,
+      "id": "8dab2221-9406-4957-a20e-26ae988e21db",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "operation": "Upload File to PDF.co",
+        "binaryData": true,
+        "name": "Testdatei.pdf"
+      },
+      "type": "n8n-nodes-pdfco.PDFco Api",
+      "typeVersion": 1,
+      "position": [
+        688,
+        1888
+      ],
+      "id": "d6569315-fedd-4263-a2b7-6846e4b82ffc",
+      "name": "PDFco Api1",
+      "credentials": {
+        "pdfcoApi": {
+          "id": "551LX2zJN6V8KwhC",
+          "name": "PDF.co account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alle Items holen\nconst items = $input.all();\n\n// Item mit API-Daten finden\nconst apiItem = items.find(i =>\n  i.json.token &&\n  i.json.server &&\n  i.json.task\n);\n\n\n\n// Item mit Dokumente-Array finden\nconst docsItem = items.find(i =>\n  Array.isArray(i.json.Dokumente) ||\n  Array.isArray(i.json.download_filename)                              \n);\n\nif (!docsItem) {\n  throw new Error(\"'Dokumente'-Array wurde nicht gefunden.\");\n}\n\n// Item mit echten Binary-Daten finden\nconst binaryItem = items.find(i =>\n  i.binary && Object.keys(i.binary).length > 0\n);\n\nif (!binaryItem) {\n  throw new Error(\"Binary-Item wurde nicht gefunden.\");\n}\n\n// Dokumentenliste extrahieren\nconst docs = docsItem.json.Dokumente;\n\n// Binary Keys wie: [\"Dokumente_0\", \"Dokumente_1\"]\nconst binaryKeys = Object.keys(binaryItem.binary);\n\n// Output für Split Items\nconst output = [];\n\n// MATCH PER INDEX – EINZIG RICHTIGE LÖSUNG\ndocs.forEach((doc, index) => {\n\n  const binaryKey = binaryKeys[index];\n  const binaryData = binaryItem.binary[binaryKey];\n\n  if (!binaryData) {\n    throw new Error(\n      `Binary-Daten für Index ${index} (${binaryKey}) nicht gefunden.`\n    );\n  }\n\n  output.push({\n    json: {\n      fileName: doc.filename,\n      mimeType: doc.mimetype,\n      size: doc.size,\n\n      // API-Daten\n      token: apiItem.json.token,\n      server: apiItem.json.server,\n      task: apiItem.json.task,\n    },\n    binary: {\n      data: binaryData\n    }\n  });\n});\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        1840
+      ],
+      "id": "f8bcfaf8-e19e-423f-b63d-84da217af610",
+      "name": "Dateien Aufspliten1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        432,
+        1776
+      ],
+      "id": "1e69a695-8aef-4e71-a77a-a561a102b58a",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all binary property names from the first item\nconst binaries = Object.keys($input.first().binary ?? {});\n\n// Create one item per binary file\nreturn binaries.map(name => {\n  const binaryData = $input.first().binary[name];\n  return {\n    json: { \n      fileName: name,\n      mimeType: binaryData.mimeType // füge MIME-Typ hinzu\n    },\n    binary: {\n      data: binaryData\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        1696
+      ],
+      "id": "99f5d9ad-f880-430a-8888-ae07daffc8b4",
+      "name": "Dateien Aufspliten2"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        704,
+        1712
+      ],
+      "id": "0e0faa08-33e3-40cd-a5ad-b8786b1c8757",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pdf.co/v1/pdf/merge2",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "pdfcoApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"{{ $json.url.join(',') }}\",\n  \"name\": \"merged.pdf\"\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        928,
+        1712
+      ],
+      "id": "d8caaf6c-89d1-4fbd-9b1c-1408feedc574",
+      "name": "Merge Request",
+      "credentials": {
+        "pdfcoApi": {
+          "id": "551LX2zJN6V8KwhC",
+          "name": "PDF.co account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toRecipients": "schulze.ja.2005@gmx.de, admin@hoewer-roth-immobilien.de, moritz@hoewer-immobilien.de",
+        "subject": "=[⚠️ n8n Error] PDF.co API -  API-Credits unter 1000\n",
+        "bodyContent": "=<!DOCTYPE html>\n\n<html lang=\"de\">\n<head>\n  <meta charset=\"UTF-8\">\n</head>\n\n<body style=\"\n  margin: 0;\n  padding: 40px 20px;\n  font-size: 14px;\n  background-color: #2d2e2e;\n  background-image: radial-gradient(#3e3e3e 1px, transparent 1px);\n  background-size: 12px 12px;\n  font-family: Arial, Helvetica, sans-serif;\n\">\n\n  <div style=\"\n    max-width: 650px;\n    margin: 0 auto;\n    background-color: #222222;\n    border-radius: 8px;\n    overflow: hidden;\n  \">\n\n```\n<!-- Header / Logo -->\n<div style=\"\n  background: #040506;\n  padding: 20px;\n  padding-bottom: 10px;\n  text-align: center;\n\">\n  <img\n    src=\"https://community.n8n.io/uploads/default/original/2X/a/afa2f499837e9dc9d85724dd8f2eb39bf11a0b5f.png\"\n    alt=\"n8n\"\n    style=\"width: 120px; height: auto; display: inline-block;\"\n  >\n</div>\n\n<!-- Content -->\n<div style=\"padding: 24px;\">\n\n  <!-- Title -->\n  <h1 style=\"\n    margin: 0 0 10px;\n    padding-bottom: 10px;\n    border-bottom: 1px solid #444444;\n    font-size: 18px;\n    font-weight: 600;\n    color: #ffffff;\n  \">\n    ⚠️ API-Credits fast aufgebraucht\n  </h1>\n\n  <!-- Warning Box -->\n  <div style=\"\n    background: #2b271d;\n    border: 1px solid #c9a227;\n    border-radius: 6px;\n    padding: 12px;\n    margin: 14px 0;\n    text-align: center;\n  \">\n    <div style=\"\n      font-size: 16px;\n      font-weight: 700;\n      color: #ffd166;\n    \">\n      Kritischer Credit-Stand erreicht\n    </div>\n  </div>\n\n  <!-- Details Table -->\n  <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n\n    <tr>\n      <td style=\"width:200px;color:#999999;font-weight:500;padding:8px 0;\">\n        Workflow\n      </td>\n      <td style=\"color:#ffffff;padding:8px 0;\">\n        {{ $workflow.name }}\n      </td>\n    </tr>\n\n    <tr>\n      <td style=\"color:#999999;font-weight:500;padding:8px 0;\">\n        Verbleibende Credits\n      </td>\n      <td style=\"color:#ffffff;padding:8px 0;\">\n        <strong style=\"color:#ffd166;\">\n          {{ $('Merge Request').item.json.remainingCredits }}\n        </strong>\n      </td>\n    </tr>\n\n    <tr>\n      <td style=\"color:#999999;font-weight:500;padding:8px 0;\">\n        Verbrauch letzter Request\n      </td>\n      <td style=\"color:#ffffff;padding:8px 0;\">\n        {{ $json.credits }}\n      </td>\n    </tr>\n\n    <tr>\n      <td style=\"color:#999999;font-weight:500;padding:8px 0;\">\n        API-Antwortstatus\n      </td>\n      <td style=\"color:#ffffff;padding:8px 0;\">\n        {{ $json.status }}\n      </td>\n    </tr>\n\n  </table>\n\n  <!-- Message -->\n  <h4 style=\"color:#ffffff;margin:24px 0 8px 0;\">\n    Hinweis\n  </h4>\n\n  <div style=\"\n    background: #212830;\n    border: 1px solid #444444;\n    border-radius: 6px;\n    padding: 12px;\n    margin: 12px 0;\n    color: #d1d7e0;\n    line-height: 1.5;\n  \">\n    Die verbleibenden API-Credits haben den definierten Schwellenwert von\n    <strong>1000</strong> unterschritten.<br><br>\n\n    Bitte prüfe zeitnah:\n    <ul style=\"margin:8px 0 0 18px;\">\n      <li>aktuellen API-Plan</li>\n      <li>mögliche Hochskalierung</li>\n      <li>oder temporäre Drosselung der Workflows</li>\n    </ul>\n  </div>\n\n  <!-- Footer -->\n  <div style=\"\n    margin-top: 20px;\n    padding-top: 16px;\n    border-top: 1px solid #444444;\n    color: #999999;\n    font-size: 12px;\n    text-align: center;\n  \">\n    n8n Monitoring · Automatische Systemwarnung\n  </div>\n\n</div>\n```\n\n  </div>\n\n</body>\n</html>",
+        "additionalFields": {
+          "importance": "High",
+          "bodyContentType": "html"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        1504
+      ],
+      "id": "0d0b7d87-210e-4bad-b356-05f60e80586c",
+      "name": "Send a message1",
+      "webhookId": "ff1e9995-e183-4232-be79-e0f79743d016",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6820771b-70c7-48f7-af18-a7414b869587",
+              "leftValue": "={{ $json.remainingCredits }}",
+              "rightValue": 1000,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        1584
+      ],
+      "id": "fcab30a5-b55a-4132-b91b-68d3a33cef9c",
+      "name": "Rest Token Prüfen"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1312,
+        1712
+      ],
+      "id": "39a6edd7-1249-4f7c-863b-05554f3b724d",
+      "name": "Dokument herunterladen"
+    }
+  ],
+  "connections": {
+    "iLovePDF Token hole": {
+      "main": [
+        [
+          {
+            "node": "iLovePDF Merge Task erstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iLovePDF Merge Task erstellen": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Dateien Aufspliten2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Dateien Aufspliten2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "iLovePDF Datei Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dateien Aufspliten": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iLovePDF Datei Upload": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Dateien Aufspliten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "iLovePDF Merge Task ausführen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "iLovePDF Merge Task ausführen": {
+      "main": [
+        [
+          {
+            "node": "iLove PDF Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PDFco Api1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dateien Aufspliten2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDFco Api1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Merge Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Request": {
+      "main": [
+        [
+          {
+            "node": "Dokument herunterladen",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Rest Token Prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rest Token Prüfen": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T19:23:09.277Z",
+      "createdAt": "2026-03-10T19:23:09.277Z",
+      "id": "swUGLTcrmOPf6Rzt",
+      "name": "Helper"
+    },
+    {
+      "updatedAt": "2026-03-10T19:23:09.282Z",
+      "createdAt": "2026-03-10T19:23:09.282Z",
+      "id": "BknvQPf4RKM6YKKS",
+      "name": "Basic-Action"
+    }
+  ],
+  "__backupMeta": {
+    "archived": false,
+    "active": true,
+    "workflowId": "wHeXLbC64bxRmXzS"
+  }
+}
