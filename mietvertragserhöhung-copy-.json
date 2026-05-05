@@ -1,0 +1,1337 @@
+{
+  "name": "Mietvertragserhöhung copy",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2080,
+        688
+      ],
+      "id": "062b5a11-6b4c-4a94-a2a1-b9cc4cb9ba71",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -2080,
+        432
+      ],
+      "id": "c0cba506-ae02-4773-aaad-2e695fb36f25",
+      "name": "Schedule Trigger",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "content",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        688
+      ],
+      "id": "dcd555a6-d368-4dab-b7fe-d3640de4ef62",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -352,
+        672
+      ],
+      "id": "ed16d0ab-0086-4dfb-bea6-8d475d1d0abb",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "147c5906-b456-4034-a73b-bd9095ee6804",
+              "leftValue": "={{ $json.contractNumber }}",
+              "rightValue": "I",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -656,
+        688
+      ],
+      "id": "fed3c370-8ac7-4c46-ae10-a274bf05f0db",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "https://api.app.impower.de/v2/contracts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "size",
+              "value": "200"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "page",
+                    "value": "={{$pageCount}}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{$response.body.last === true}}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1104,
+        688
+      ],
+      "id": "2f6ff15d-c6e6-46cb-942b-9dc7820ee97e",
+      "name": "Mietverträge abrufen",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput || 'Analysieren Sie den Verbraucherpreisindex für Deutschland. Rufen Sie die Daten für den aktuellen Monat und für denselben Monat vor einem Jahr von der Genesis API ab. Vergleichen Sie die Indexwerte und berechnen Sie die Inflationsrate. Geben Sie das Ergebnis als strukturiertes JSON zurück.' }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=Sie sind ein spezialisierter Datenanalyst für Verbraucherpreisindizes des Statistischen Bundesamtes Deutschland.\n\nIHRE AUFGABE:\nAnalysieren Sie den Verbraucherpreisindex (VPI) für Deutschland, indem Sie aktuelle Daten mit Vorjahresdaten vergleichen und eine strukturierte Analyse erstellen.\n\nARBEITSABLAUF:\n1. Bestimmen Sie zunächst den aktuellen Monat und das aktuelle Jahr (Es ist der: {{ $now.format(\"YYYY-MM-DD HH:mm\") }}) \n2. Rufen Sie die VPI-Daten für den aktuellen Monat ab mit dem Tool 'Genesis API - Aktueller Monat'\n   - Übergeben Sie current_year (z.B. '2025') und current_month (z.B. '01' für Januar)\n3. Rufen Sie die VPI-Daten für denselben Monat vor einem Jahr ab mit dem Tool 'Genesis API - Vorjahr'\n   - Übergeben Sie previous_year (z.B. '2024') und previous_month (z.B. '01')\n4. Extrahieren Sie aus beiden API-Antworten die relevanten Indexwerte\n5. Erstellen Sie eine strukturierte Analyse\n\nWICHTIGE HINWEISE ZUR GENESIS API:\n- Die API gibt JSON-Daten zurück mit verschachtelter Struktur\n- Suchen Sie nach dem Indexwert im Feld 'WERT1' oder ähnlichen Feldern\n- Achten Sie auf die korrekte Extraktion der numerischen Werte\n\nOUTPUT FORMAT:\nIhre Antwort MUSS ein valides JSON-Objekt mit folgender Struktur sein:\n{\n  \"aktueller_monat\": {\n    \"zeitraum\": \"YYYY-MM\",\n    \"indexwert\": <Zahl>,\n    \"veraenderung_zum_vormonat\": <Zahl oder null>,\n    \"veraenderung_zum_vorjahresmonat\": <Zahl oder null>\n  },\n  \"vorjahr\": {\n    \"zeitraum\": \"YYYY-MM\",\n    \"indexwert\": <Zahl>,\n    \"veraenderung_zum_vormonat\": <Zahl oder null>,\n    \"veraenderung_zum_vorjahresmonat\": <Zahl oder null>\n  }\n}\n\nGeben Sie AUSSCHLIESSLICH das JSON-Objekt zurück, ohne zusätzlichen Text davor oder danach."
+        }
+      },
+      "id": "d4e13a89-00fc-449c-b144-f5670d371a62",
+      "name": "VPI Analyse Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1744,
+        688
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "960a124e-4195-48a3-9898-8822e85670af",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1856,
+        912
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Ruft den Verbraucherpreisindex (VPI) für den aktuellen Monat von der Genesis API ab. Parameter: current_year (z.B. '2025') - das Jahr für die Abfrage. Die API gibt Daten für Tabelle 61111-0002 zurück.",
+        "method": "POST",
+        "url": "https://www-genesis.destatis.de/genesisWS/rest/2020/data/table",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "username",
+              "value": "3c3023e363084cea89ef7ad788e95b52"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "61111-0002"
+            },
+            {
+              "name": "area",
+              "value": "000000"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "startyear",
+              "value": "={{ $fromAI('current_year') }}"
+            },
+            {
+              "name": "endyear",
+              "value": "={{ $fromAI('current_year') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1cf09621-0d44-4bf0-8101-0ecdc9a0e13c",
+      "name": "Genesis API - Aktueller Monat",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        -1728,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Ruft den Verbraucherpreisindex (VPI) für denselben Monat vor einem Jahr von der Genesis API ab. Parameter: previous_year (z.B. '2024') - das Vorjahr für die Abfrage. Die API gibt Daten für Tabelle 61111-0002 zurück.",
+        "method": "POST",
+        "url": "https://www-genesis.destatis.de/genesisWS/rest/2020/data/table",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "username",
+              "value": "3c3023e363084cea89ef7ad788e95b52"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "61111-0002"
+            },
+            {
+              "name": "area",
+              "value": "000000"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "startyear",
+              "value": "={{ $fromAI('previous_year') }}"
+            },
+            {
+              "name": "endyear",
+              "value": "={{ $fromAI('previous_year') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0914a2f5-1afe-4835-b7d0-2b4d2b3bf821",
+      "name": "Genesis API - Vorjahr",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        -1600,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"aktueller_monat\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"zeitraum\": { \"type\": \"string\", \"description\": \"Berichtszeitraum im Format YYYY-MM\" },\n        \"indexwert\": { \"type\": \"number\", \"description\": \"Verbraucherpreisindex (2020=100)\" },\n        \"veraenderung_zum_vormonat\": { \"type\": \"number\", \"description\": \"Prozentuale Veränderung zum Vormonat\" },\n        \"veraenderung_zum_vorjahresmonat\": { \"type\": \"number\", \"description\": \"Prozentuale Veränderung zum Vorjahresmonat\" }\n      },\n      \"required\": [\"zeitraum\", \"indexwert\"]\n    },\n    \"vorjahr\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"zeitraum\": { \"type\": \"string\", \"description\": \"Berichtszeitraum im Format YYYY-MM\" },\n        \"indexwert\": { \"type\": \"number\", \"description\": \"Verbraucherpreisindex (2020=100)\" },\n        \"veraenderung_zum_vormonat\": { \"type\": \"number\", \"description\": \"Prozentuale Veränderung zum Vormonat\" },\n        \"veraenderung_zum_vorjahresmonat\": { \"type\": \"number\", \"description\": \"Prozentuale Veränderung zum Vorjahresmonat\" }\n      },\n      \"required\": [\"zeitraum\", \"indexwert\"]\n    }\n  },\n  \"required\": [\"aktueller_monat\", \"vorjahr\"]\n}",
+        "autoFix": true
+      },
+      "id": "adf04b1d-84b8-4eb3-aa6c-744ebb7a86d5",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1472,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1392,
+        1120
+      ],
+      "id": "8c4b4adf-a191-476e-8963-a4f1caf74a56",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/services/pmp-accounting/api/v1/exchange-plan?contractIds={{ $('Vertrag abrufen').item.json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        688
+      ],
+      "id": "c1e94dda-ee52-4851-8fd7-ccf3c2cbbb00",
+      "name": "Exchange Plan abrufen",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput || 'Analysieren Sie die Exchange Plan Details für diesen Indexmietvertrag. VERTRAGSDATEN: ' + JSON.stringify($json.contract_data) + ' EXCHANGE PLAN: ' + JSON.stringify($json.exchange_plan) + ' VPI ANALYSE: ' + JSON.stringify($json.vpi_data) + ' Aktuelles Datum: ' + $json.current_date + '. Prüfen Sie, ob eine Mieterhöhung durchgeführt werden soll (letzte Erhöhung > 12 Monate) und berechnen Sie die neue Miete.' }}\n\nEigentümer:{{ $('Prepare AI Input - Add Current Date').item.json.content }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=Sie sind ein spezialisierter Immobilienverwaltungs-Assistent für Indexmieterhöhungen nach deutschem Mietrecht.\n\n=== IHRE AUFGABE ===\nPrüfen Sie für jeden Indexmietvertrag, ob eine Mieterhöhung durchgeführt werden soll, und erstellen Sie bei Bedarf ein vollständiges Indexmieterhöhungsschreiben.\n\n=== EINGABEDATEN ===\nSie erhalten die Daten im User Prompt als JSON-Strings:\n1. VERTRAGSDATEN: Verfügbar in $json.contract_data - enthält Mieter, Vermieter, Objektinformationen\n2. EXCHANGE PLAN: Verfügbar in $json.exchange_plan - enthält alle bisherigen Mietanpassungen mit Datum und Typ\n3. VPI ANALYSE: Verfügbar in $json.vpi_data - enthält aktuelle und historische VPI-Indexwerte vom Statistischen Bundesamt\n4. AKTUELLES DATUM: Verfügbar in $json.current_date\n\n=== ENTSCHEIDUNGSKRITERIEN ===\nEine Mieterhöhung ist NUR durchzuführen, wenn ALLE Bedingungen erfüllt sind:\n\n1. ZEITKRITERIUM:\n   - Die letzte Kaltmieterhöhung liegt MEHR als 10 Monate zurück\n   - Prüfen Sie im Exchange Plan das Datum der letzten Erhöhung mit dem Typ 'Kaltmiete' oder 'Grundmiete'\n   - Vergleichen Sie mit dem aktuellen Datum aus $json.current_date\n   - *Es ist extrem wichtig, das du genau Prüfst, ob die Letzte erhöhung im Eschange Plan länger als 10 Monate her ist.* Es kann vorkommen das du keine änderung findest, dann ist der erste Eintrag mit dieser Kaltmiete der Gültige. Es kann vorkommen das du mehrer änderungen im Verlauf findest, dann ist das DDatum der letzten Änderung das relevante.\n   - Setzen Sie das Feld \"erhoehung\" auf true, wenn eine Erhöhung erstellt werden soll\n   - Setzen Sie das Feld \"erhoehung\" auf false, wenn die letzte Erhöhung weniger als 12 Monate zurückliegt\n\n2. INDEXSTEIGERUNG:\n   - Der aktuelle VPI-Index ist höher als der Basis-Index der letzten Erhöhung\n   - Eine Erhöhung ist wirtschaftlich sinnvoll (mindestens 2% Steigerung empfohlen)\n\n=== BERECHNUNGSMETHODE ===\nWenn eine Erhöhung durchgeführt wird:\n\n1. BASIS-INDEX ermitteln:\n   - Monat und Jahr der letzten Kaltmieterhöhung aus Exchange Plan\n   - Entsprechender VPI-Wert aus den VPI-Daten in $json.vpi_data\n\n2. AKTUELLER INDEX:\n   - Aktueller Monat und Jahr aus $json.current_date\n   - Aktueller VPI-Wert aus $json.vpi_data.aktueller_monat.indexwert\n\n3. NEUE MIETE berechnen:\n   Formel: Neue Miete = Alte Miete × (Neuer Index / Basis-Index)\n   \n   Beispiel:\n   - Alte Kaltmiete: 850,00 €\n   - Basis-Index (Jan 2023): 110,3\n   - Neuer Index (Jan 2025): 118,7\n   - Berechnung: 850,00 × (118,7 / 110,3) = 914,79 €\n   - Erhöhung: 64,79 €\n\n4. RUNDUNG:\n   - Auf 2 Dezimalstellen runden\n   - Erhöhungsbetrag = Neue Miete - Alte Miete\n\n=== WIRKSAMKEITSDATUM ===\nDie Mieterhöhung wird wirksam:\n- Am ERSTEN TAG des ÜBERNÄCHSTEN MONATS nach Zugang des Schreibens\n- Berechnen Sie das Datum basierend auf $json.current_date + 2 Monate\n- Beispiel: Heute: 22.01.2026, dann wirksamm ab: 01.03.2026\n- Achte extrem auf die Korrekte Setzung dessen\n\n=== AUSGABEFORMAT ===\n\nFalls KEINE Erhöhung durchgeführt wird (letzte Erhöhung < 12 Monate):\nGeben Sie ein JSON-Objekt mit nur dem meta-Feld zurück:\n{\n  \"meta\": {\n    \"document_type\": \"Indexmieterhöhung\",\n    \"created_at\": \"[Aktuelles Datum aus $json.current_date]\",\n    \"location\": \"Lünen\",\n    \"author_name\": \"Moritz Höwer\",\n    \"erhoehung\": false\n  }\n}\n\nFalls eine Erhöhung durchgeführt wird:\nGeben Sie ein vollständig ausgefülltes JSON-Objekt mit folgender Struktur zurück:\n\n{\n  \"meta\": {\n    \"document_type\": \"Indexmieterhöhung\",\n    \"created_at\": \"[Aktuelles Datum aus $json.current_date]\",\n    \"location\": \"Lünen\",\n    \"author_name\": \"Moritz Höwer\",\n    \"erhoehung\": true\n  },\n  \"landlord\": {\n    \"name\": \"Höwer & Roth Immobilien GmbH\",\n    \"street\": \"Hüttenallee 65\",\n    \"postal_code\": \"44534\",\n    \"city\": \"Lünen\"\n  },\n  \"tenant\": {\n    \"name\": \"[Aus $json.contract_data extrahieren]\",\n    \"street\": \"[Aus $json.contract_data extrahieren]\",\n    \"postal_code\": \"[Aus $json.contract_data extrahieren]\",\n    \"city\": \"[Aus $json.contract_data extrahieren]\"\n  },\n  \"property\": {\n    \"address\": \"[Vollständige Adresse aus $json.contract_data]\",\n    \"unit\": \"[Wohnungsbezeichnung aus $json.contract_data]\",\n    \"contract_date\": \"[Vertragsbeginn aus $json.contract_data im Format DD.MM.YYYY]\",\n    \"contract_type\": \"INDEX\"\n  },\n  \"index_reference\": {\n    \"base_index_month\": \"[Monat YYYY der letzten Erhöhung aus Exchange Plan]\",\n    \"base_index_value\": [Basis-VPI-Wert aus $json.vpi_data],\n    \"new_index_month\": \"[Aktueller Monat aus $json.current_date]\",\n    \"new_index_value\": [Wert aus $json.vpi_data.aktueller_monat.indexwert]\n  },\n  \"rent_calculation\": {\n    \"previous_net_cold_rent\": [Bisherige Kaltmiete aus Exchange Plan],\n    \"new_net_cold_rent\": [Berechnete neue Kaltmiete, auf 2 Dezimalstellen gerundet],\n    \"increase_amount\": [Erhöhungsbetrag, auf 2 Dezimalstellen gerundet]\n  },\n  \"effectiveness\": {\n    \"effective_from\": \"[Datum: $json.current_date + 2 Monate, erster Tag des Monats, Format DD.MM.YYYY]\",\n    \"legal_notice\": \"Beginn des übernächsten Monats nach Zugang dieses Schreibens\"\n  }\n}\n\n=== WICHTIGE HINWEISE ===\n- Prüfen Sie ALLE Exchange Plan Einträge in $json.exchange_plan sorgfältig auf die letzte Kaltmieterhöhung\n- Verwenden Sie EXAKT die VPI-Werte aus $json.vpi_data\n- Alle Geldbeträge auf 2 Dezimalstellen runden\n- Datumsformat: DD.MM.YYYY\n- Monatsnamen auf Deutsch (Januar, Februar, etc.)\n- Das Feld \"erhoehung\" MUSS immer gesetzt werden: true wenn Erhöhung erstellt wird, false wenn nicht\n- Bei Unsicherheit: Setzen Sie erhoehung auf false\n\n=== BEISPIEL-PRÜFUNG ===\n1. Letzte Kaltmieterhöhung aus Exchange Plan: 15.01.2023\n2. Heutiges Datum aus $json.current_date: 22.12.2024\n3. Zeitdifferenz: Mehr als 12 Monate? → JA → erhoehung: true\n4. Basis-Index (Jan 2023) aus VPI-Daten: 110,3\n5. Aktueller Index aus $json.vpi_data.aktueller_monat.indexwert: 118,7\n6. Indexsteigerung: (118,7 - 110,3) / 110,3 = 7,6% → JA, Erhöhung durchführen\n7. Neue Miete berechnen und vollständiges JSON ausgeben mit erhoehung: true"
+        }
+      },
+      "id": "f6923f34-84f7-4f4f-bc11-7830e49b00f5",
+      "name": "Indexmieterhöhung Entscheidung & Berechnung",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1184,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {
+          "frequencyPenalty": 0,
+          "temperature": 0,
+          "topP": 1
+        }
+      },
+      "id": "0d569a67-3f86-48a2-8715-eb805212b089",
+      "name": "OpenAI Chat Model - Mieterhöhung",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        880
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "current_date",
+              "value": "={{ $now.format('dd.MM.yyyy') }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "effective_date",
+              "value": "={{ $now.plus({months: 2}).startOf('month').format('dd.MM.yyyy') }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "vpi_data",
+              "value": "={{ JSON.stringify($('VPI Analyse Agent').first().json.output) }}",
+              "type": "object"
+            },
+            {
+              "id": "id-5",
+              "name": "exchange_plan",
+              "value": "={{ JSON.stringify($('Exchange Plan abrufen').item.json) }}",
+              "type": "object"
+            },
+            {
+              "id": "id-6",
+              "name": "contract_data",
+              "value": "={{ JSON.stringify($('Vertrag abrufen').item.json) }}",
+              "type": "object"
+            },
+            {
+              "id": "30147fcf-24f7-4487-a9c2-3a5fda906475",
+              "name": "property_unit",
+              "value": "={{ $('Property abrufen').item.json.position }}",
+              "type": "string"
+            },
+            {
+              "id": "4de1a741-fc48-4856-97a8-b78eb77be498",
+              "name": "Objekteigentümer",
+              "value": "={{ $('Kontakt des Eigentümers Abrufen').item.json.content }}",
+              "type": "array"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "2705bf75-562e-453d-a461-d6beb97e3417",
+      "name": "Prepare AI Input - Add Current Date",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "={\n  \"type\": \"object\",\n  \"properties\": {\n    \"meta\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"document_type\": { \"type\": \"string\" },\n        \"created_at\": { \"type\": \"string\" },\n        \"location\": { \"type\": \"string\" },\n        \"author_name\": { \"type\": \"string\" },\n        \"erhoehung\": { \"type\": \"boolean\", \"description\": \"Gibt an, ob eine Erhöhung erstellt werden muss (true) oder nicht (false), weil die letzte Erhöhung weniger als ein Jahr her ist\" }\n      },\n      \"required\": [\"document_type\", \"created_at\", \"location\", \"author_name\", \"erhoehung\"]\n    },\n    \"landlord\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"name\": { \"type\": \"string\" },\n        \"street\": { \"type\": \"string\" },\n        \"postal_code\": { \"type\": \"string\" },\n        \"city\": { \"type\": \"string\" }\n      }\n    },\n    \"tenant\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"name\": { \"type\": \"string\" },\n        \"street\": { \"type\": \"string\" },\n        \"postal_code\": { \"type\": \"string\" },\n        \"city\": { \"type\": \"string\" }\n      }\n    },\n    \"property\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"address\": { \"type\": \"string\" },\n        \"unit\": { \"type\": \"string\" },\n        \"contract_date\": { \"type\": \"string\" },\n        \"contract_type\": { \"type\": \"string\" }\n      }\n    },\n    \"index_reference\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"base_index_month\": { \"type\": \"string\" },\n        \"base_index_value\": { \"type\": \"number\" },\n        \"new_index_month\": { \"type\": \"string\" },\n        \"new_index_value\": { \"type\": \"number\" }\n      }\n    },\n    \"rent_calculation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"previous_net_cold_rent\": { \"type\": \"number\" },\n        \"new_net_cold_rent\": { \"type\": \"number\" },\n        \"increase_amount\": { \"type\": \"number\" }\n      }\n    },\n    \"effectiveness\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"effective_from\": { \"type\": \"string\" },\n        \"legal_notice\": { \"type\": \"string\" }\n      }\n    }\n  },\n  \"required\": [\"meta\"]\n}",
+        "autoFix": true
+      },
+      "id": "a25dc9d2-3fd8-45bb-bc20-fe3d6b574770",
+      "name": "Structured Output Parser - Indexmieterhöhung",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1360,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "3bdfb451-0ae6-4218-ade6-3fba8cfd602d",
+      "name": "OpenAI Chat Model - Parser",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1408,
+        1024
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/contracts/{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -160,
+        688
+      ],
+      "id": "eb015eec-36c2-4540-91d1-5bb25b9d3d57",
+      "name": "Vertrag abrufen",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/contracts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "propertyId",
+              "value": "={{ $json.propertyId }}"
+            },
+            {
+              "name": "type",
+              "value": "PROPERTY_OWNER"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        240,
+        688
+      ],
+      "id": "dd0d53c5-fa1c-464b-8049-2db9f7009165",
+      "name": "Objekteigentümer Abrufen",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6a41aa23-a6f6-4885-95d2-6a064b161c02",
+              "leftValue": "={{ $json.output.meta.erhoehung }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        512
+      ],
+      "id": "fa5c550a-2be6-4875-bfc8-068b6be6da15",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const groups = {};\n\nfor (const item of items) {\n\n  // Defensive Check\n  if (!item.json.output?.property?.address) {\n    continue;\n  }\n\n  const address = item.json.output.property.address;\n\n  if (!groups[address]) {\n    groups[address] = {\n      address,\n      landlord: item.json.output.landlord,\n      units: []\n    };\n  }\n\n  groups[address].units.push(item.json.output);\n}\n\nreturn Object.values(groups).map(g => ({ json: g }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        432
+      ],
+      "id": "98b84b64-18f5-4577-b0f7-89211e00aba5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        320,
+        432
+      ],
+      "id": "86ab6111-8168-43a5-9d4a-778dbd4c2125",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "batchSize": 2,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        48
+      ],
+      "id": "b50550cf-9f6d-4c1f-98a1-11619e4996d7",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "units",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        448
+      ],
+      "id": "f96e7606-4901-4240-baff-a30f6d8c4e02",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "e4a77b23c69a6f5c",
+        "jsonParameters": true,
+        "download": true,
+        "propertiesJson": "={\n  \"meta\": {\n    \"document_type\": \"Indexmieterhöhung\",\n    \"created_at\": \"{{ $json.meta.created_at }}\",\n    \"location\": \"Lünen\",\n    \"author_name\": \"{{ $json.meta.author_name }}\"\n  },\n\t\n  \"landlord\": {\n    \"name\": \"{{ $json.landlord.name }}\",\n    \"street\": \"{{ $json.landlord.street }}\",\n    \"postal_code\": \"{{ $json.landlord.postal_code }}\",\n    \"city\": \"{{ $json.landlord.city }}\"\n  },\n  \n  \"tenant\": {\n    \"name\": \"{{ $json.tenant.name }}\",\n    \"street\": \"{{ $json.tenant.street }}\",\n    \"postal_code\": \"{{ $json.tenant.postal_code }}\",\n    \"city\": \"{{ $json.tenant.city }}\"\n  },\n\n  \"property\": {\n    \"address\": \"{{ $json.property.address }}\",\n    \"unit\": \"{{ $json.property.unit }}\",\n    \"contract_date\": \"{{ $json.property.contract_date }}\",\n    \"contract_type\": \"{{ $json.property.contract_type }}\"\n  },\n\n  \"index_reference\": {\n    \"base_index_month\": \"{{ $json.index_reference.base_index_month }}\",\n    \"base_index_value\": \"{{ $json.index_reference.base_index_value }}\",\n    \"new_index_month\": \"{{ $json.index_reference.new_index_month }}\",\n    \"new_index_value\": \"{{ $json.index_reference.new_index_value }}\"\n  },\n\n  \"rent_calculation\": {\n    \"previous_net_cold_rent\": \"{{ $json.rent_calculation.previous_net_cold_rent }}\",\n    \"new_net_cold_rent\": \"{{ $json.rent_calculation.new_net_cold_rent }}\",\n    \"increase_amount\": \"{{ $json.rent_calculation.increase_amount }}\"\n  },\n\n  \"effectiveness\": {\n    \"effective_from\": \"{{ $json.effectiveness.effective_from }}\",\n    \"legal_notice\": \"Beginn des übernächsten Monats nach Zugang dieses Schreibens\"\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        448
+      ],
+      "id": "9e05db6f-a260-4a96-a1dc-e347bbd30fbf",
+      "name": "Create a pdf",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "yPDxE5mBsw0O87Z3",
+          "name": "APITemplate.io account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Indexmieterhöhungen, {{ $json.address }}",
+        "bodyContent": "=Im Anhang findest du die fälligen Mieterhöhungen der Adresse: {{ $json.address }}.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        624,
+        448
+      ],
+      "id": "e56f5555-666b-403a-a429-6664a6491b6a",
+      "name": "Create a draft",
+      "webhookId": "be760cb3-c79b-4ad1-8957-0f2ce37122f9",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1488,
+        448
+      ],
+      "id": "e314a713-0829-4fdc-95b7-02d541ceba92",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/users/admin@hoewer-roth-immobilien.de/messages/{{ $('Create a draft').first().json.id }}/attachments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"@odata.type\": \"microsoft.graph.fileAttachment\",\n  \"name\": \"Mietinteressent.pdf\",\n  \"contentType\": \"application/pdf\",\n  \"contentBytes\": \"{{ $json.data.replace(/\\\\s+/g, '') }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1712,
+        448
+      ],
+      "id": "a9b5e47c-c090-4f2c-bd3d-4bef5b8768cf",
+      "name": "Anhang hinzufügen",
+      "credentials": {
+        "microsoftOAuth2Api": {
+          "id": "Giwhyorjb2ikNQHh",
+          "name": "Microsoft Graph Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "send",
+        "draftId": {
+          "__rl": true,
+          "value": "={{ $('Create a draft').first().json.id }}",
+          "mode": "id"
+        },
+        "to": "admin@hoewer-roth-immobilien.de"
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        448
+      ],
+      "id": "883f7294-78d6-433d-b6ad-13964d226ebf",
+      "name": "Send a draft",
+      "webhookId": "2be956d6-96fa-4c1c-a163-7d6697567cc8",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        688
+      ],
+      "id": "8f279176-0005-4ad1-8714-241b01917df5",
+      "name": "Wait",
+      "webhookId": "a38e910c-7fb0-40dd-a0b8-9e410c6372d7",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ed256908-ab78-42d8-8c89-f46c000bfe11",
+              "name": "mail_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f11890d0-56d3-4360-b737-541bd28ae905",
+              "name": "units",
+              "value": "={{ $('Loop Over Items1').item.json.units }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        816,
+        448
+      ],
+      "id": "efafc91d-4da3-4c5c-9a35-c21bf7600592",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "71b6f759-3c81-4127-bbb0-bfc21c9c8743",
+      "name": "Split Out2"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "bc851e92-ae49-454e-9c63-1e26073dde8b",
+      "name": "Loop Over Items3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        512,
+        64
+      ],
+      "id": "475b5403-d24a-4088-876d-402d717b4cce"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1936,
+        448
+      ],
+      "id": "bc90ac87-567d-4a3c-861c-5159851b216c",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/contacts/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.content[0].name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        432,
+        688
+      ],
+      "id": "1658f649-f7fd-44d6-a858-bd8afe3f1acf",
+      "name": "Kontakt des Eigentümers Abrufen",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.app.impower.de/v2/units/{{ $json.unitId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        48,
+        688
+      ],
+      "id": "4e30cbfb-d7bc-48c7-aa4a-42390a47102e",
+      "name": "Property abrufen",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "gLD7Yg02eRtJDj1M",
+          "name": "Impower Prod API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "VPI Analyse Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Vertrag abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mietverträge abrufen": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "VPI Analyse Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Genesis API - Aktueller Monat": {
+      "ai_tool": [
+        [
+          {
+            "node": "VPI Analyse Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Genesis API - Vorjahr": {
+      "ai_tool": [
+        [
+          {
+            "node": "VPI Analyse Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "VPI Analyse Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exchange Plan abrufen": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Input - Add Current Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VPI Analyse Agent": {
+      "main": [
+        [
+          {
+            "node": "Mietverträge abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model - Mieterhöhung": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Indexmieterhöhung Entscheidung & Berechnung",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Input - Add Current Date": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Indexmieterhöhung Entscheidung & Berechnung": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model - Parser": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser - Indexmieterhöhung",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser - Indexmieterhöhung": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Indexmieterhöhung Entscheidung & Berechnung",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vertrag abrufen": {
+      "main": [
+        [
+          {
+            "node": "Property abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Objekteigentümer Abrufen": {
+      "main": [
+        [
+          {
+            "node": "Kontakt des Eigentümers Abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Create a pdf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a pdf": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Anhang hinzufügen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anhang hinzufügen": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a draft": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Indexmieterhöhung Entscheidung & Berechnung",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items3": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Send a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kontakt des Eigentümers Abrufen": {
+      "main": [
+        [
+          {
+            "node": "Exchange Plan abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Property abrufen": {
+      "main": [
+        [
+          {
+            "node": "Objekteigentümer Abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "__backupMeta": {
+    "archived": false,
+    "active": false,
+    "workflowId": "t2GDBoaXMbDrXfqG"
+  }
+}
