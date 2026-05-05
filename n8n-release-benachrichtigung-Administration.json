@@ -1,0 +1,738 @@
+{
+  "name": "n8n Release Benachrichtigung",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.body }}",
+        "options": {
+          "openLinksInNewWindow": true,
+          "simplifiedAutoLink": true,
+          "backslashEscapesHTMLTags": true,
+          "customizedHeaderId": true,
+          "emoji": true,
+          "encodeEmails": true,
+          "excludeTrailingPunctuationFromURLs": true,
+          "ghCodeBlocks": true,
+          "ghCompatibleHeaderId": true,
+          "ghMentionsLink": "https://github.com/{u}",
+          "ghMentions": true,
+          "tasklists": true,
+          "headerLevelStart": 1,
+          "requireSpaceBeforeHeadingText": true,
+          "literalMidWordAsterisks": true,
+          "literalMidWordUnderscores": true,
+          "noHeaderId": true,
+          "parseImgDimensions": true,
+          "rawHeaderId": true,
+          "rawPrefixHeaderId": true,
+          "simpleLineBreaks": true,
+          "smartIndentationFix": true,
+          "disableForced4SpacesIndentedSublists": true,
+          "splitAdjacentBlockquotes": true,
+          "strikethrough": true,
+          "tablesHeaderId": true,
+          "tables": true
+        }
+      },
+      "id": "4c80868f-1c26-4c8c-9e8c-1cf47526a865",
+      "name": "Convert Notes To HTML",
+      "type": "n8n-nodes-base.markdown",
+      "position": [
+        1568,
+        704
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.n8n_tag2_version }}",
+        "options": {
+          "scope": "node",
+          "historySize": 1000
+        }
+      },
+      "id": "14c57214-3dc1-48bb-9ab4-29ff971c0c25",
+      "name": "Deduplicate Beta Releases",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "position": [
+        1392,
+        352
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5df4b88f-2306-4188-8fc9-ed3c8e6f94ab",
+              "name": "my_n8n_version",
+              "type": "string",
+              "value": "={{ $json.my_n8n_version }}"
+            },
+            {
+              "id": "d4d150de-c4f5-4f4b-9943-24b09a9df0a5",
+              "name": "n8n_tag",
+              "type": "string",
+              "value": "={{ $('n8n URL & Version References').item.json.n8n_tag_2 }}"
+            },
+            {
+              "id": "30bac9d8-f0e9-4c75-b800-0d8cbd507d7f",
+              "name": "n8n_version",
+              "type": "string",
+              "value": "={{ $json.n8n_tag2_version }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "88b1b6da-c91c-4ea9-8a9c-a2e429d8bbf0",
+      "name": "Set Beta Tag Info",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1584,
+        352
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "content": "## Fetch & Combine Versions\nRuns hourly to get the current instance version, plus the latest and beta versions from npm.",
+        "height": 512,
+        "width": 720,
+        "color": 7
+      },
+      "id": "ed056697-cd21-457d-9c96-c760867dff59",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        432,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Check for New Releases\nDeduplicates the fetched versions against past runs, Only new releases will continue from this point.",
+        "height": 512,
+        "width": 784,
+        "color": 7
+      },
+      "id": "24d42c9e-4068-492e-9783-8f7c31319ff5",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1168,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Format & Send Email\nFor any new release, this section fetches its notes from GitHub, converts them from Markdown to HTML, and sends a formatted email notification.",
+        "height": 448,
+        "width": 980,
+        "color": 7
+      },
+      "id": "4c0c004c-f7c8-4fbe-89e9-30c9676f5cb3",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        992,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 📢 Monitor n8n releases and get notifications for new versions 🆕\n\nThis workflow automatically monitors n8n’s release channels (latest and beta) and sends you email notifications whenever a new version is published. It also reads the version of your current n8n instance, allowing you to integrate automatic updates and ensure you never miss a release.\n\n### Who is this for\nThis workflow is designed for n8n users who want to stay informed and up to date with new releases and features without manually checking for updates, especially those managing their own instances who need to plan upgrades and review release notes.\n\n### How it works\nThe workflow performs the following steps:\n- **Fetches version information from the npm registry** (latest and beta releases)\n- **Identifies only new versions** by deduplication\n- **Retrieves release notes from GitHub** for any newly detected version\n- **Converts Markdown to HTML** for email template formatting\n- **Sends a styled email notification** including the release name, version tag, your current version, and the complete release notes\n\n",
+        "height": 656,
+        "width": 416
+      },
+      "id": "acd595b2-f7e0-4427-848e-3860c22a9018",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Email Sample\n![image](https://community.n8n.io/uploads/default/original/3X/2/e/2e37de57d0f80c6d1d2dcac89492789743cac60d.png\n)",
+        "height": 448,
+        "width": 336,
+        "color": 4
+      },
+      "id": "73f1bb04-764f-4404-b176-b614653b3112",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1984,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "addSuffix"
+            }
+          }
+        }
+      },
+      "id": "7c79e942-033b-42af-9ca3-f3575a082bc8",
+      "name": "Combine Versions",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        1008,
+        224
+      ],
+      "executeOnce": false,
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a7787c92-705f-445f-8eee-a36c3555203c",
+              "name": "my_n8n_version",
+              "type": "string",
+              "value": "={{ $json.body_1.data.versionCli }}"
+            },
+            {
+              "id": "7e6dc6fa-44be-4e52-bf5c-1ebf4262f18a",
+              "name": "n8n_tag1_version",
+              "type": "string",
+              "value": "={{ $json.body_2.version }}"
+            },
+            {
+              "id": "e60360ab-4856-45be-b998-99434e9e8275",
+              "name": "n8n_tag2_version",
+              "type": "string",
+              "value": "={{ $json.body_3.version }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "973abadc-d317-4ff7-a527-6cfbcf9b24d6",
+      "name": "Version Variables",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1216,
+        240
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.n8n_tag1_version }}",
+        "options": {
+          "scope": "node",
+          "historySize": 1000
+        }
+      },
+      "id": "9c2440be-bafa-4c00-aae0-7dc8e0ed5a31",
+      "name": "Deduplicate Latest Releases",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "position": [
+        1392,
+        96
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "80f29f73-3738-4e41-a26a-5812f945251f",
+              "name": "my_n8n_version",
+              "type": "string",
+              "value": "={{ $json.my_n8n_version }}"
+            },
+            {
+              "id": "934af598-0edc-4c7a-a4a9-601db309536e",
+              "name": "n8n_tag",
+              "type": "string",
+              "value": "={{ $('n8n URL & Version References').item.json.n8n_tag_1 }}"
+            },
+            {
+              "id": "586595ef-eb47-4dd6-b32a-627d8dcc0df1",
+              "name": "n8n_version",
+              "type": "string",
+              "value": "={{ $json.n8n_tag1_version }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2509378e-81ea-470d-8bbf-3151f55964f5",
+      "name": "Set Latest Tag Info",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1584,
+        160
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {},
+      "id": "e349011f-ec86-4068-ac57-d249c74b19ea",
+      "name": "Merge Releases",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        1776,
+        336
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/n8n-io/n8n/releases/tags/n8n@{{ $json.n8n_version }}",
+        "options": {}
+      },
+      "id": "4d87ad01-09a7-498e-87e6-5e8a1ee6c52b",
+      "name": "Get GitHub Release Notes",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1024,
+        704
+      ],
+      "typeVersion": 4.3
+    },
+    {
+      "parameters": {
+        "url": "=https://registry.npmjs.org/n8n/{{ $json.n8n_tag_1 }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fe40cac2-95f0-42db-b70e-78af57c7dc6a",
+      "name": "Get Latest n8n Release",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        832,
+        240
+      ],
+      "typeVersion": 4.3,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://registry.npmjs.org/n8n/{{ $json.n8n_tag_2 }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "7b8d9928-254e-464b-aeee-f2b51b3893b1",
+      "name": "Get Beta n8n Release",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        832,
+        384
+      ],
+      "typeVersion": 4.3,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "## Mohamed Anan\n![Anan](https://1.gravatar.com/avatar/2c212891367a29a481ce306de2a3c936abab9dd120e11aae24782b47f5d856bd?size=64)\nA curious EnGiNeEr who enjoys `SoLviNg` PrObLeMs..\n___\n- [x] [Top Supporter](https://community.n8n.io/u/mohamed3nan/badges) in the [n8n community](https://community.n8n.io/u/mohamed3nan/summary) with **200+ hours** of contribution and **+200 solutions** provided, ranked **12th** on the [all-time leaderboard](https://community.n8n.io/leaderboard/1#:~:text=12-,mohamed3nan,-4%2C078).\n\n___\n⚡[n8n Workflows](https://n8n.io/creators/mohamed3nan/)\n💼[LinkedIn](https://link.anan.dev/Linkedin)",
+        "height": 304,
+        "width": 416,
+        "color": 4
+      },
+      "id": "b5d26158-afc7-431e-829f-d3627c9d8309",
+      "name": "Triggers Section Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        672
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7c53dc45-34d8-4bee-bd4d-3eb6b3e1da94",
+              "name": "my_n8n_url",
+              "type": "string",
+              "value": "https://hoewer-roth-immobilien.app.n8n.cloud"
+            },
+            {
+              "id": "d3ecc033-4ad6-4db8-bbd3-1ed144933170",
+              "name": "n8n_tag_1",
+              "type": "string",
+              "value": "latest"
+            },
+            {
+              "id": "80d7b269-3231-4adc-bf82-d676f8efecad",
+              "name": "n8n_tag_2",
+              "type": "string",
+              "value": "beta"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "34a93f63-eb0c-4d7a-ba65-42f7399ef816",
+      "name": "n8n URL & Version References",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        656,
+        240
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "content": "### Setup\n- Configure your n8n instance URL (Set `my_n8n_url`) to detect your current version (optional — can be left blank)\n- Connect and authorize the Gmail account used to send emails\n- Update the recipient email address in the Gmail node\n\n### Requirements\n- A Gmail account for sending emails\n\n### Customization tips\n- Adjust the schedule trigger if hourly checks are too frequent\n- Modify the release channel (e.g., “latest” or “beta”) if you want to track a different tag\n- Change the npm registry link if you want to monitor a different package\n- Customize the email template/styling in the Gmail node\n- Add additional notification channels (Slack, Discord, etc.) alongside or instead of email\n- Extend this workflow to automatically update your n8n instance when a new release becomes available",
+        "height": 448,
+        "width": 544
+      },
+      "id": "3707ef67-5478-4c0d-8805-43385af9e6bc",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        432,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.my_n8n_url }}/rest/settings",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "84d248f6-ce31-49da-8cff-35ac3e5b3264",
+      "name": "Get Instance Version",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        832,
+        96
+      ],
+      "typeVersion": 4.3,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "id": "dde708b9-8804-4018-ab68-8b92acffe895",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        480,
+        240
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "toRecipients": "schulze.ja.2005@gmx.de",
+        "subject": "=⚡ n8n New ({{ $('Merge Releases').item.json.n8n_tag }}) Version Released! [{{ $('Get GitHub Release Notes').item.json.tag_name }}]",
+        "bodyContent": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n</head>\n\n <body style=\"\n  margin: 0;\n  padding: 40px 20px;\n  font-size: 14px;\n  background-color: #2d2e2e;\n  background-image: radial-gradient(#3e3e3e 1px, transparent 1px);\n  background-size: 12px 12px;\n\">\n\n  <div class=\"container\" style=\"max-width: 650px; margin: 0 auto; background-color: #222222; border-radius: 8px; overflow: hidden;\">\n    \n    <div class=\"logo-container\" style=\"background: #040506; padding: 20px; padding-bottom:10px ;text-align: center;\">\n      <img src=\"https://community.n8n.io/uploads/default/original/2X/a/afa2f499837e9dc9d85724dd8f2eb39bf11a0b5f.png\" alt=\"n8n\" class=\"logo\" style=\"width: 120px; height: auto; display: inline-block;\">\n    </div>\n    \n    <div class=\"content\" style=\"padding: 24px;\">\n      <h1 style=\"margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid #444444; font-size: 18px; font-weight: 600; color: #FFFFFF; \">\n        ⚡ New Version Released!\n      </h1>\n      \n      <div class=\"version-box\" style=\"background: #dff6dd; border: 1px solid #1a7f37; border-radius: 6px; padding: 10px; margin: 10px 0; text-align: center;\">\n        <div class=\"version\" style=\"font-size: 18px; font-weight: 700; color: #1a7f37; \">\n          {{ $('Get GitHub Release Notes').item.json.tag_name }}\n        </div>\n      </div>\n      \n      <table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">\n        <tr style=\"padding: 8px 0;\">\n          <td style=\"width: 170px; color: #999999; font-weight: 500; padding-top: 8px; padding-bottom: 8px;\">\n            New Release Tag:\n          </td>\n          <td style=\"color: #FFFFFF; padding-top: 8px; padding-bottom: 8px;\">\n            {{ $('Merge Releases').item.json.n8n_tag }}, {{ $('Get GitHub Release Notes').item.json.tag_name }}\n          </td>\n        </tr>\n        <tr>\n          <td style=\"width: 170px; color: #999999; font-weight: 500; padding-top: 16px; padding-bottom: 8px;\">\n           My Current n8n Version:\n          </td>\n          <td style=\"color: #FFFFFF; padding-top: 16px; padding-bottom: 8px;\">\n            {{ $('Merge Releases').item.json.my_n8n_version }}\n          </td>\n        </tr>\n      </table>\n\n      <h4 style=\"color: #FFFFFF; margin: 24px 0 8px 0; \">Release Notes</h4>\n      \n      <div class=\"message\" style=\"background: #212830; border: 1px solid #444444; border-radius: 6px; padding: 12px; margin: 16px 0; color: #d1d7e0; \">\n        {{ $json.output[0].content[0].text }}\n      </div>\n\n\n      <div class=\"footer\" style=\"margin-top: 10px; padding-top: 20px; border-top: 1px solid #444444; color: #999999; font-size: 12px; \">\n        Remember to backup your instance before updating.\n      </div>\n    </div>\n  </div>\n</body>\n</html>",
+        "additionalFields": {
+          "bodyContentType": "html"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        704
+      ],
+      "id": "ee2478af-53b1-4cbc-ad02-620434f874da",
+      "name": "Send a message",
+      "webhookId": "38cf1637-dfd3-4227-bdf4-627feb31519c",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Du erhälst hier nun gleich alle aktuellen Release Notes von den aktuellsten n8n Updates. Schau dir diese bitte an und fasse diese Systematisch nach änderungen und relevanten updates zusammen. Ich möchte gerne eine Zusammenfassung der wichtigsten änderungen erhölaten und nicht so eine krytischen Release Note block haben. Sei dabei bitte kur und kanpp und sinnvoll zusammenfassend. Markiere bitte in der antwort ob es ssich um die Latest oder die Beta uppdates handelt. und schriebe diese so das diese sinnvol in einnem E-mAil Body zu lesen sind. Schrieb aber keinne anschrifft oder begrüßung oder so, sondern nur die Informationen. Formatire deine Antwort bitte sinnvoll mit html absätzen etc.\n\n{{ $json.body }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1232,
+        704
+      ],
+      "id": "d91414b9-cc2b-49b5-bfb0-c67186237541",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Merge Releases": {
+      "main": [
+        [
+          {
+            "node": "Get GitHub Release Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Versions": {
+      "main": [
+        [
+          {
+            "node": "Version Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "n8n URL & Version References",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Beta Tag Info": {
+      "main": [
+        [
+          {
+            "node": "Merge Releases",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Version Variables": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate Latest Releases",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Deduplicate Beta Releases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Latest Tag Info": {
+      "main": [
+        [
+          {
+            "node": "Merge Releases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Beta n8n Release": {
+      "main": [
+        [
+          {
+            "node": "Combine Versions",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get Instance Version": {
+      "main": [
+        [
+          {
+            "node": "Combine Versions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Notes To HTML": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Latest n8n Release": {
+      "main": [
+        [
+          {
+            "node": "Combine Versions",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get GitHub Release Notes": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate Beta Releases": {
+      "main": [
+        [
+          {
+            "node": "Set Beta Tag Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate Latest Releases": {
+      "main": [
+        [
+          {
+            "node": "Set Latest Tag Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n URL & Version References": {
+      "main": [
+        [
+          {
+            "node": "Get Instance Version",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Latest n8n Release",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Beta n8n Release",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Convert Notes To HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "UOTTrHniJeBc7Vgx",
+    "callerPolicy": "workflowsFromSameOwner",
+    "timeSavedPerExecution": 1
+  },
+  "pinData": {},
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [
+    {
+      "updatedAt": "2026-03-13T16:58:22.838Z",
+      "createdAt": "2026-03-13T16:58:22.838Z",
+      "id": "O0h5fhHhihgPLwt9",
+      "name": "Administration"
+    }
+  ],
+  "__backupMeta": {
+    "archived": false,
+    "active": true,
+    "workflowId": "meU2lY5dMWsrE7q7"
+  }
+}
