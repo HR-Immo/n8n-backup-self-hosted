@@ -1,0 +1,518 @@
+{
+  "name": "Datei-Bild Analyse",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Eingabe der Dateien im Formular\n\n",
+        "height": 416,
+        "width": 288,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -720,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "f0439a93-7be6-4b17-ba7f-b3900aecb642",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "batchSize": "={{ Math.min(30, Math.max(1, $items().length)) }}",
+        "options": {}
+      },
+      "id": "3099cda0-191a-4045-89b3-6c82eda8db56",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        96,
+        416
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all binary property names from the first item\nconst binaries = Object.keys($input.first().binary ?? {});\n\n// Create one item per binary file\nreturn binaries.map(name => {\n  const binaryData = $input.first().binary[name];\n  return {\n    json: { \n      fileName: name,\n      mimeType: binaryData.mimeType // füge MIME-Typ hinzu\n    },\n    binary: {\n      data: binaryData\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        256
+      ],
+      "id": "8ce995a6-7ecd-4fd5-9b31-9dac1cae76e2",
+      "name": "Dateien Aufspliten"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        608,
+        16
+      ],
+      "id": "ae863d73-a813-4eb9-84a5-5475d568d6a9",
+      "name": "Text aus PDFs"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -624,
+        256
+      ],
+      "id": "dca39026-c9e7-4066-9d96-9c904468ee03",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5f76a2bc-2011-4b88-9cac-3735f5f2c5af",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "=application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        256
+      ],
+      "id": "3364ba7a-bd28-4ae0-82fb-161454cd08a4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "batchSize": "={{ Math.min(30, Math.max(1, $items().length)) }}\n",
+        "options": {}
+      },
+      "id": "df8b5dc1-2408-4dd1-aafc-a071c7a8b0ec",
+      "name": "Loop Over Items1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        96,
+        112
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "Ich werde dir gleich ein Bild schicken. Extrahiere sämtlichen Text, der darauf zu erkennen ist.\n\nGib den Text vollständig, ohne Auslassungen, ohne eigene Interpretation und wortwörtlich wieder.\nAchte darauf, dass die Ausgabe in der Reihenfolge erfolgt, wie sie im Bild logisch gelesen wird (z. B. oben → unten, links → rechts, oder entsprechend dem Layout, falls es mehrspaltig ist).\nFalls einzelne Bereiche unklar oder schwer lesbar sind, markiere sie mit [unleserlich] statt zu raten.\nGib den erkannten Text in reinem Textformat wieder — keine zusätzlichen Kommentare.\n ",
+        "inputType": "base64",
+        "options": {
+          "maxTokens": 16384
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        608,
+        608
+      ],
+      "id": "153c2576-3ad7-405f-b882-9707edf9242d",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        688,
+        272
+      ],
+      "id": "4f0524a2-d13b-4ca3-b751-5f69ae9385e8",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "beef6aa7-4a17-472a-9678-5f628eb13009",
+              "name": "text",
+              "value": "={{ $json.pages.map(p => p.markdown).join(\"\\n\\n---\\n\\n\") }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        400
+      ],
+      "id": "1a36fd15-eb83-4c00-9c2f-1b71f43137a3",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        880,
+        272
+      ],
+      "id": "bd5a9ee5-3e24-4e4a-b413-5e52e835a360",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "formTitle": "Testdokumente",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Dokumente",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -624,
+        112
+      ],
+      "id": "8910204d-670f-4415-a949-7e11b559380a",
+      "name": "Testdatenformular",
+      "webhookId": "5a73f26a-3646-490f-b730-90231c5107c5"
+    },
+    {
+      "parameters": {
+        "content": "## Datentrennung & Sortierung nach Filetypen",
+        "height": 288,
+        "width": 400,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -416,
+        144
+      ],
+      "typeVersion": 1,
+      "id": "6e0f100c-6e94-4cde-b64d-37f8c8cb4786",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Datenanalyse und Extraktion von Texten",
+        "height": 736,
+        "width": 592,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "b1ea0b8b-71f5-4a4b-a7fa-86c537e4d8ca",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Zusammenführen und ausgeben der Texte",
+        "height": 288,
+        "width": 528,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        608,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "c3b6e35c-53ff-4a3a-81b3-257499a5f478",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        272,
+        192
+      ],
+      "id": "2c9d3c60-a152-4473-b9db-0f0027d7fc46",
+      "name": "Extract text",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "VQySPHjrz3PJuPMw",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentType": "image_url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        272,
+        512
+      ],
+      "id": "18ed2f21-5223-4e16-b927-04bb9c42afb5",
+      "name": "Extract text1",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "VQySPHjrz3PJuPMw",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "579c833a-f909-4fea-8f43-3a1b7f4abf06",
+              "name": "text",
+              "value": "={{ $json.pages.map(p => p.markdown).join(\"\\n\\n---\\n\\n\") }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        96
+      ],
+      "id": "d8aef2fb-4948-484e-988a-05d2fe652b34",
+      "name": "Edit Fields"
+    }
+  ],
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dateien Aufspliten": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Dateien Aufspliten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Testdatenformular": {
+      "main": [
+        [
+          {
+            "node": "Dateien Aufspliten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T19:23:09.277Z",
+      "createdAt": "2026-03-10T19:23:09.277Z",
+      "id": "swUGLTcrmOPf6Rzt",
+      "name": "Helper"
+    },
+    {
+      "updatedAt": "2026-03-10T19:23:09.282Z",
+      "createdAt": "2026-03-10T19:23:09.282Z",
+      "id": "BknvQPf4RKM6YKKS",
+      "name": "Basic-Action"
+    }
+  ],
+  "__backupMeta": {
+    "archived": false,
+    "active": true,
+    "workflowId": "dqKzofSMjJVZsB1s"
+  }
+}
