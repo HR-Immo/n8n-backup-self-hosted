@@ -1,0 +1,915 @@
+{
+  "name": "Vorlage aus Impower befüllen",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Mieter aus Impower laden Dokumentero\nErkennen ob Mieter im System ist ",
+        "height": 864,
+        "width": 1376
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        800
+      ],
+      "typeVersion": 1,
+      "id": "bdaab766-72d9-4cd3-afba-523ae23fc6f6",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Aufgabe\nDu ermittelst vollständige Mieter-, Vertrags-, Einheiten- und Objektdaten aus Impower.\n\n# Tools\n- MCP Impower (Hausverwalter-Tool): Dies ist einne Tollsamlung, über welche du die Möglichkeit hast mit dem Impower System zu komunizieren. Es bietet dir alle benötigten schnnitstellen um die informationen anzufragen.\n- Impower APi Exchange Plan: \n  Dieses Tool ruft den Impower Exchange-Plan-Endpoint auf, um die monatliche Miete eines konkreten Vertrags zu ermitteln. Das Tool MUSS verwendet werden, sobald eine contractId bekannt ist. Der Endpoint erwartet die contractId als Query-Parameter contractIds. Es dürfen mehrere contractIds übergeben werden, getrennt durch Komma. Der Tool-Aufruf darf nur erfolgen, wenn mindestens eine gültige contractId vorliegt.\nEndpunkt:\n  https://api.app.impower.de/services/pmp-accounting/api/v1/exchange-plan\nQueye-Parameter:\ncontractIds={contractIds}\nplanTypes=RENT_BREAKDOWN,RENT_FLAT_RATE\nstates=ACTIVATED\nsize=99999\n\n# Extraktionsregeln (VERPFLICHTEND)\n\n- Tool-Antworten können JSON als Text enthalten.\n  Du musst dieses JSON vollständig interpretieren.\n- Wenn Werte in Arrays enthalten sind, nutze das logisch passende Element\n  (z. B. aktive Einheit, aktiver Vertrag).\n- Wohnfläche (einheit.flaeche_qm) ist aus den Unit-Eigenschaften zu ermitteln\n  (z. B. properties, attributes, area, livingSpace).\n- Gesamtmiete (vertrag.gesamtmiete) ist aus dem Vertrag oder den Zahlungsdaten\n  zu ermitteln (z. B. rent, payments, charges).\n- Wenn mehrere mögliche Felder existieren, wähle das wahrscheinlichste\n  und dokumentiere die Herkunft implizit im Ergebnis.\n- Setze ein Feld NUR dann auf \"nicht hinterlegt\",\n  wenn du die komplette Tool-Antwort geprüft hast\n  und kein passender Wert existiert.\n\n\n# Vorgehensweise (VERPFLICHTEND)\n1. Ermittle zuerst den aktiven Vertrag des Mieters.\n2. Nutze die contractId, um:\n   - Vertragsbeginn\n   - Vertragsstatus\n   - monatliche Gesamtmiete\n   zu ermitteln.\n3. Ermittle aus dem Vertrag die unitId.\n4. Nutze die unitId, um:\n   - Typ der Einheit\n   - Lage / Bezeichnung\n   - Wohnfläche in qm\n   - Anzahl Zimmer\n   zu ermitteln.\n5. Ermittle aus der unitId oder propertyId die Objektadresse.\n\n# Rules\n- Fülle das Output JSON immer maximal vollständig auf.\n- Falls du zu manchen felder keine Informationen finden kannst, weil diese nicht hinterlegt sind, fülle dies mit \"nicht hinterlegt\".\n- Wenn ein Feld nicht ermittelbar ist, gib explizit an,\n  welcher Endpoint keine Daten geliefert hat.\n- Falls du manche Felder nicht füllen kannst, weil du keinen Zugriff hast diese Informationen zu erfragen, fülle diese mit \"Abfrage nicht möglich, entpunkt {Endpunkt xy} nicht berechtigt\".\n\n# Final Output Rules (VERY IMPORTANT)\n\nBitte beantworte die folgenden Fragen, damit ich den JSON vollständig ausfüllen kann:\n\n### Mieter\n- Wie lautet der vollständige Name des Mieters? (mieter.name)\n- Welche Telefonnummer hat der Mieter? (mieter.kontakt.telefon)\n- Welche E-Mail-Adresse hat der Mieter? (mieter.kontakt.email)\n- Welchen Status hat der Mieter? (z. B. aktiv, inaktiv) (mieter.status)\n\n### Vertrag\n- Wann beginnt der Vertrag? (Format: YYYY-MM-DD) (vertrag.beginn)\n- Welchen Status hat der Vertrag? (z. B. laufend, beendet) (vertrag.status)\n- Wie hoch ist die monatliche Gesamtmiete in Euro? (vertrag.gesamtmiete)\n\n### Einheit\n- Welchen Typ hat die Einheit? (z. B. Wohnung, Büro) (einheit.typ)\n- Wo befindet sich die Einheit? (z. B. Obergeschoss links) (einheit.lage)\n- Wie groß ist die Einheit in Quadratmetern? (einheit.flaeche_qm)\n- Wie viele Zimmer hat die Einheit? (einheit.zimmer)\n\n### Objekt\n- Wie lautet die Straße des Objekts? (objekt.adresse.strasse)\n- Welche Hausnummer hat das Objekt? (objekt.adresse.hausnummer)\n- Welche Postleitzahl hat das Objekt? (objekt.adresse.plz)\n- In welcher Stadt befindet sich das Objekt? (objekt.adresse.stadt)\n\nGib ausschließlich ein valides JSON-Objekt zurück.\nKein Text, keine Erklärung, kein Wrapper.\nKein Feld \"output\".\n\nDer Json soll naher so aufgebaut sein:\n{\n  \"mieter.name\": \"Max Mustermann\",\n  \"mieter.kontakt.telefon\": \"+49 170 0000000\",\n  \"mieter.kontakt.email\": \"mieter@example.com\",\n  \"mieter.status\": \"aktiv\",\n\n  \"vertrag.beginn\": \"2022-01-01\",\n  \"vertrag.status\": \"laufend\",\n  \"vertrag.gesamtmiete\": 890.0,\n\n  \"einheit.typ\": \"Wohnung\",\n  \"einheit.lage\": \"Obergeschoss links\",\n  \"einheit.flaeche_qm\": 68,\n  \"einheit.zimmer\": 2,\n\n  \"objekt.adresse.strasse\": \"Musterstraße\",\n  \"objekt.adresse.hausnummer\": \"1\",\n  \"objekt.adresse.plz\": \"12345\",\n  \"objekt.adresse.stadt\": \"Musterstadt\"\n}\n",
+          "maxIterations": 20
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        464,
+        1040
+      ],
+      "id": "40e2505c-3635-49ba-a684-2237fa06acd4",
+      "name": "Mieter auslesen"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        352,
+        1296
+      ],
+      "id": "d588224d-1ea2-4dba-8ecf-fa46f84b22ad",
+      "name": "OpenAI Chat Model2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "10e6fed6-1c2a-4a01-bab2-eb1badbf15e0",
+              "name": "chatInput",
+              "value": "={{ $json.query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        544,
+        112
+      ],
+      "id": "0080dcbc-1712-4726-a250-cc111854cb5b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://impower.hr-immobilien-mcp.cl.immodigit.de/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "include": "selected",
+        "includeTools": [
+          "get-v-2-contacts",
+          "get-v-2-contacts-contact-id",
+          "get-v-2-contracts",
+          "get-v-2-contracts-contract-id",
+          "get-v-2-units",
+          "get-v-2-units-unit-id",
+          "get-v-2-properties",
+          "get-v-2-properties-property-id"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        1328
+      ],
+      "id": "b19853ba-1ff4-4802-b826-5c25603a3ec4",
+      "name": "MCP Impower (Hausverwalter-Tool)"
+    },
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"query\": \"Liebing\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        112
+      ],
+      "id": "dcdeea32-3725-4a31-b126-9f5b1c827192",
+      "name": "Mieterauslesen Impower"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Overview\nDu suchst Haus mit allen Informationen in Impower. \nGib die Infos als JSON zurück.\nGib dazu kontakte der eigentümer aus.\n\n# Tools\n- MCP Impower (Hausverwalter-Tool): Dies ist einne Tollsamlung, über welche du die Möglichkeit hast mit dem Impower System zu komunizieren. Es bietet dir alle benötigten schnnitstellen und informationen zum anfragen.\n\n# Final Output Rules (VERY IMPORTANT)\n\nGib solch ein JSON zurück, in dem Format: \"\n  \"Haus\": {\n    \"adresse\": {\n      \"strasse\": \"Herner Straße\",\n      \"hausnummer\": \"226\",\n      \"plz\": \"44809\",\n      \"stadt\": \"Bochum\"\n    },\n    \"eihieten\": \"10\"\n  },\n  \"kontakt\": {\n    \"name\": \"maximilian müller\"\n    \"telefon\": \"+49 176 93284571\",\n    \"email\": \"mara.keller@example.com\"\n  }\n}\n\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        304
+      ],
+      "id": "71ef7084-9f67-4344-aca3-2f18a0d04f4a",
+      "name": "Mieter auslesen1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        560
+      ],
+      "id": "a63a4ead-f4ec-42ec-9610-9c96fd1753fd",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://impower.hr-immobilien-mcp.cl.immodigit.de/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "include": "selected",
+        "includeTools": [
+          "get-v-2-contracts",
+          "get-v-2-contracts-contract-id",
+          "get-v-2-document-tags",
+          "get-v-2-docs",
+          "get-v-2-docs-download-zip",
+          "get-v-2-docs-document-id-download",
+          "get-v-2-properties",
+          "get-v-2-properties-property-id",
+          "get-v-2-rent-settlement",
+          "get-v-2-units",
+          "get-v-2-units-unit-id"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        560
+      ],
+      "id": "cf3e42a8-b569-4999-b6ed-7f1e0dc393f4",
+      "name": "MCP Impower (Hausverwalter-Tool)1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        1904
+      ],
+      "id": "9e7bd3fa-4c92-4e87-8cea-9f1147507fe1",
+      "name": "When chat message received",
+      "webhookId": "62cdbd9f-c5b7-4f48-bd5e-74f89ab23117"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"mieter.name\": \"Max Mustermann\",\n  \"mieter.kontakt.telefon\": \"+49 170 0000000\",\n  \"mieter.kontakt.email\": \"mieter@example.com\",\n  \"mieter.status\": \"aktiv\",\n\n  \"vertrag.beginn\": \"2022-01-01\",\n  \"vertrag.status\": \"laufend\",\n  \"vertrag.gesamtmiete\": 890.0,\n\n  \"einheit.typ\": \"Wohnung\",\n  \"einheit.lage\": \"Obergeschoss links\",\n  \"einheit.flaeche_qm\": 68,\n  \"einheit.zimmer\": 2,\n\n  \"objekt.adresse.strasse\": \"Musterstraße\",\n  \"objekt.adresse.hausnummer\": \"1\",\n  \"objekt.adresse.plz\": \"12345\",\n  \"objekt.adresse.stadt\": \"Musterstadt\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        1344
+      ],
+      "id": "9da1ed20-0ce6-4897-8599-180d2b8c6a39",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        1520
+      ],
+      "id": "abf7cebc-5935-459b-9d81-8721d1ea60a8",
+      "name": "OpenAI Chat Model1"
+    },
+    {
+      "parameters": {
+        "content": "## Hold\n",
+        "height": 704,
+        "width": 1744,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "48361547-e2af-49ca-9655-b482471603d7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e0eb0fcc-4496-48e3-93cf-f84aa08fa424",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        464
+      ],
+      "id": "b7f662af-a45b-4fa0-a9d3-e4e0ad83168c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "document": "utQ8ZDX7d9CfqvgiUB7m",
+        "dataSource": "input"
+      },
+      "type": "n8n-nodes-documentero.documentero",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        1024
+      ],
+      "id": "b560bfe8-9420-4fdd-a98f-3b3c230f9cc2",
+      "name": "Documentero",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: $json.output\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        1024
+      ],
+      "id": "88b70f43-406d-42c9-9327-076caf52cfb5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "https://api.app.impower.de/services/pmp-accounting/api/v1/exchange-plan?contractIds=608115%2C1267713&planTypes=RENT_BREAKDOWN%2CRENT_FLAT_RATE&propertyId=29983&size=99999&states=ACTIVATED",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1360,
+        288
+      ],
+      "id": "80bfe9d0-4ab4-4fa6-8988-3890cbd01fc5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Stellt einen HTTP Request gege die Impower Api, um über den Priaten Endpunkt an den Exchange pla und somit miethöhen zu gelannge.",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        672,
+        1328
+      ],
+      "id": "9dfc184e-f774-4129-bd3c-2632695a034c",
+      "name": "Impower APi Exchange Plan"
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "ac077b23c778f972",
+        "jsonParameters": true,
+        "download": true,
+        "propertiesJson": "={\n  \"guarantor\": {\n    \"firstName\": \"{{ $json.output.guarantor.firstName }}\",\n    \"lastName\": \"{{ $json.output.guarantor.lastName }}\",\n    \"birthDate\": \"{{ $json.output.guarantor.birthDate }}\",\n    \"address\": \"{{ $json.output.guarantor.address }}\",\n    \"phone\": \"{{ $json.output.guarantor.phone }}\",\n    \"email\": \"{{ $json.output.guarantor.email }}\"\n  },\n  \"tenant\": {\n    \"firstName\": \"{{ $json.output.tenant.firstName }}\",\n    \"lastName\": \"{{ $json.output.tenant.lastName }}\",\n    \"birthDate\": \"{{ $json.output.tenant.birthDate }}\",\n    \"address\": \"{{ $json.output.tenant.address }}\",\n    \"phone\": \"{{ $json.output.tenant.phone }}\",\n    \"email\": \"{{ $json.output.tenant.email }}\"\n  },\n  \"apartment\": {\n    \"location\": \"{{ $json.output.apartment.location }}\",\n    \"address\": \"{{ $json.output.apartment.address }}\"\n  },\n  \"signature\": {\n    \"place\": \"{{ $json.output.signature.place }}\",\n    \"date\": \"{{ $json.output.signature.date }}\"\n  }\n}\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        960,
+        1904
+      ],
+      "id": "f81809fd-0b1a-4867-82ee-230f83499076",
+      "name": "Create a pdf"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Aufgabe\nDu ermittelst vollständige Mieter-, Vertrags-, Einheiten- und Objektdaten aus Impower.\n\n# Tools\n- MCP Impower (Hausverwalter-Tool): Dies ist einne Tollsamlung, über welche du die Möglichkeit hast mit dem Impower System zu komunizieren. Es bietet dir alle benötigten schnnitstellen um die informationen anzufragen.\n- Impower APi Exchange Plan: \n  Dieses Tool ruft den Impower Exchange-Plan-Endpoint auf, um die monatliche Miete eines konkreten Vertrags zu ermitteln. Das Tool MUSS verwendet werden, sobald eine contractId bekannt ist. Der Endpoint erwartet die contractId als Query-Parameter contractIds. Es dürfen mehrere contractIds übergeben werden, getrennt durch Komma. Der Tool-Aufruf darf nur erfolgen, wenn mindestens eine gültige contractId vorliegt.\nEndpunkt:\n  https://api.app.impower.de/services/pmp-accounting/api/v1/exchange-plan\nQueye-Parameter:\ncontractIds={contractIds}\nplanTypes=RENT_BREAKDOWN,RENT_FLAT_RATE\nstates=ACTIVATED\nsize=99999\n\n# Extraktionsregeln (VERPFLICHTEND)\n\n- Tool-Antworten können JSON als Text enthalten.\n  Du musst dieses JSON vollständig interpretieren.\n- Wenn Werte in Arrays enthalten sind, nutze das logisch passende Element\n  (z. B. aktive Einheit, aktiver Vertrag).\n- Wohnfläche (einheit.flaeche_qm) ist aus den Unit-Eigenschaften zu ermitteln\n  (z. B. properties, attributes, area, livingSpace).\n- Gesamtmiete (vertrag.gesamtmiete) ist aus dem Vertrag oder den Zahlungsdaten\n  zu ermitteln (z. B. rent, payments, charges).\n- Wenn mehrere mögliche Felder existieren, wähle das wahrscheinlichste\n  und dokumentiere die Herkunft implizit im Ergebnis.\n- Setze ein Feld NUR dann auf \"nicht hinterlegt\",\n  wenn du die komplette Tool-Antwort geprüft hast\n  und kein passender Wert existiert.\n\n\n# Vorgehensweise (VERPFLICHTEND)\n1. Ermittle zuerst den aktiven Vertrag des Mieters.\n2. Nutze die contractId, um:\n   - Vertragsbeginn\n   - Vertragsstatus\n   - monatliche Gesamtmiete\n   zu ermitteln.\n3. Ermittle aus dem Vertrag die unitId.\n4. Nutze die unitId, um:\n   - Typ der Einheit\n   - Lage / Bezeichnung\n   - Wohnfläche in qm\n   - Anzahl Zimmer\n   zu ermitteln.\n5. Ermittle aus der unitId oder propertyId die Objektadresse.\n\n# Rules\n- Fülle das Output JSON immer maximal vollständig auf.\n- Falls du zu manchen felder keine Informationen finden kannst, weil diese nicht hinterlegt sind, fülle dies mit \"nicht hinterlegt\".\n- Wenn ein Feld nicht ermittelbar ist, gib explizit an,\n  welcher Endpoint keine Daten geliefert hat.\n- Falls du manche Felder nicht füllen kannst, weil du keinen Zugriff hast diese Informationen zu erfragen, fülle diese mit \"Abfrage nicht möglich, entpunkt {Endpunkt xy} nicht berechtigt\".\n\n# Final Output Rules (VERY IMPORTANT)\n\nBitte beantworte die folgenden Fragen, damit ich den JSON vollständig ausfüllen kann:\n\n### Mieter\n- Wie lautet der vollständige Name des Mieters? (mieter.name)\n- Welche Telefonnummer hat der Mieter? (mieter.kontakt.telefon)\n- Welche E-Mail-Adresse hat der Mieter? (mieter.kontakt.email)\n- Welchen Status hat der Mieter? (z. B. aktiv, inaktiv) (mieter.status)\n\n### Vertrag\n- Wann beginnt der Vertrag? (Format: YYYY-MM-DD) (vertrag.beginn)\n- Welchen Status hat der Vertrag? (z. B. laufend, beendet) (vertrag.status)\n- Wie hoch ist die monatliche Gesamtmiete in Euro? (vertrag.gesamtmiete)\n\n### Einheit\n- Welchen Typ hat die Einheit? (z. B. Wohnung, Büro) (einheit.typ)\n- Wo befindet sich die Einheit? (z. B. Obergeschoss links) (einheit.lage)\n- Wie groß ist die Einheit in Quadratmetern? (einheit.flaeche_qm)\n- Wie viele Zimmer hat die Einheit? (einheit.zimmer)\n\n### Objekt\n- Wie lautet die Straße des Objekts? (objekt.adresse.strasse)\n- Welche Hausnummer hat das Objekt? (objekt.adresse.hausnummer)\n- Welche Postleitzahl hat das Objekt? (objekt.adresse.plz)\n- In welcher Stadt befindet sich das Objekt? (objekt.adresse.stadt)\n\nGib ausschließlich ein valides JSON-Objekt zurück.\nKein Text, keine Erklärung, kein Wrapper.\nKein Feld \"output\".\n\nDer Json soll naher so aufgebaut sein:\n{\n  \"guarantor\": {\n    \"firstName\": \"Max\",\n    \"lastName\": \"Mustermann\",\n    \"birthDate\": \"01.01.1980\",\n    \"address\": \"Musterstraße 1, 12345 Musterstadt\",\n    \"phone\": \"0151 12345678\",\n    \"email\": \"max.mustermann@example.de\"\n  },\n  \"tenant\": {\n    \"firstName\": \"Erika\",\n    \"lastName\": \"Beispiel\",\n    \"birthDate\": \"12.05.1995\",\n    \"address\": \"Beispielweg 10, 44534 Lünen\",\n    \"phone\": \"02306 987654\",\n    \"email\": \"erika.beispiel@example.de\"\n  },\n  \"apartment\": {\n    \"location\": \"1. OG links\",\n    \"address\": \"Hüttenallee 65, 44534 Lünen\"\n  },\n  \"signature\": {\n    \"place\": \"Lünen\",\n    \"date\": \"15.01.2026\"\n  }\n}\n\n",
+          "maxIterations": 20
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        1904
+      ],
+      "id": "366a25c4-0bc9-442b-90ab-2e9c7c8a0ea6",
+      "name": "Mieter auslesen3"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        2160
+      ],
+      "id": "86769001-1faf-4942-bb45-8445a75ee5e2",
+      "name": "OpenAI Chat Model5"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://impower.hr-immobilien-mcp.cl.immodigit.de/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "include": "selected",
+        "includeTools": [
+          "get-v-2-contacts",
+          "get-v-2-contacts-contact-id",
+          "get-v-2-contracts",
+          "get-v-2-contracts-contract-id",
+          "get-v-2-units",
+          "get-v-2-units-unit-id",
+          "get-v-2-properties",
+          "get-v-2-properties-property-id"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        2192
+      ],
+      "id": "7e75bddf-75e9-406d-9179-eb988f89fff7",
+      "name": "MCP Impower (Hausverwalter-Tool)3"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"guarantor\": {\n    \"firstName\": \"Max\",\n    \"lastName\": \"Mustermann\",\n    \"birthDate\": \"01.01.1980\",\n    \"address\": \"Musterstraße 1, 12345 Musterstadt\",\n    \"phone\": \"0151 12345678\",\n    \"email\": \"max.mustermann@example.de\"\n  },\n  \"tenant\": {\n    \"firstName\": \"Erika\",\n    \"lastName\": \"Beispiel\",\n    \"birthDate\": \"12.05.1995\",\n    \"address\": \"Beispielweg 10, 44534 Lünen\",\n    \"phone\": \"02306 987654\",\n    \"email\": \"erika.beispiel@example.de\"\n  },\n  \"apartment\": {\n    \"location\": \"1. OG links\",\n    \"address\": \"Hüttenallee 65, 44534 Lünen\"\n  },\n  \"signature\": {\n    \"place\": \"Lünen\",\n    \"date\": \"15.01.2026\"\n  }\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        736,
+        2208
+      ],
+      "id": "0d86c485-1978-4ff1-982e-aa6587a1f8aa",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        2384
+      ],
+      "id": "d252cb4d-bf36-4deb-9eaf-3c70bd177b92",
+      "name": "OpenAI Chat Model6"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Stellt einen HTTP Request gege die Impower Api, um über den Priaten Endpunkt an den Exchange pla und somit miethöhen zu gelannge.",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        592,
+        2192
+      ],
+      "id": "52fee06e-0d96-4ad6-87a1-14ab4ec2afdf",
+      "name": "Impower APi Exchange Plan2"
+    },
+    {
+      "parameters": {
+        "content": "## Mieter aus Impower laden API Templato\nErkennen ob Mieter im System ist ",
+        "height": 864,
+        "width": 1376,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        1760
+      ],
+      "typeVersion": 1,
+      "id": "96006c75-9733-44f4-b2da-281850273dda",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Aufgabe\nDu ermittelst vollständige Mieter-, Vertrags-, Einheiten- und Objektdaten aus Impower.\n\n# Tools\n- MCP Impower (Hausverwalter-Tool): Dies ist einne Tollsamlung, über welche du die Möglichkeit hast mit dem Impower System zu komunizieren. Es bietet dir alle benötigten schnnitstellen um die informationen anzufragen.\n- Impower APi Exchange Plan: \n  Dieses Tool ruft den Impower Exchange-Plan-Endpoint auf, um die monatliche Miete eines konkreten Vertrags zu ermitteln. Das Tool MUSS verwendet werden, sobald eine contractId bekannt ist. Der Endpoint erwartet die contractId als Query-Parameter contractIds. Es dürfen mehrere contractIds übergeben werden, getrennt durch Komma. Der Tool-Aufruf darf nur erfolgen, wenn mindestens eine gültige contractId vorliegt.\nEndpunkt:\n  https://api.app.impower.de/services/pmp-accounting/api/v1/exchange-plan\nQueye-Parameter:\ncontractIds={contractIds}\nplanTypes=RENT_BREAKDOWN,RENT_FLAT_RATE\nstates=ACTIVATED\nsize=99999\n\n# Extraktionsregeln (VERPFLICHTEND)\n\n- Tool-Antworten können JSON als Text enthalten.\n  Du musst dieses JSON vollständig interpretieren.\n- Wenn Werte in Arrays enthalten sind, nutze das logisch passende Element\n  (z. B. aktive Einheit, aktiver Vertrag).\n- Wohnfläche (einheit.flaeche_qm) ist aus den Unit-Eigenschaften zu ermitteln\n  (z. B. properties, attributes, area, livingSpace).\n- Gesamtmiete (vertrag.gesamtmiete) ist aus dem Vertrag oder den Zahlungsdaten\n  zu ermitteln (z. B. rent, payments, charges).\n- Wenn mehrere mögliche Felder existieren, wähle das wahrscheinlichste\n  und dokumentiere die Herkunft implizit im Ergebnis.\n- Setze ein Feld NUR dann auf \"nicht hinterlegt\",\n  wenn du die komplette Tool-Antwort geprüft hast\n  und kein passender Wert existiert.\n\n\n# Vorgehensweise (VERPFLICHTEND)\n1. Ermittle zuerst den aktiven Vertrag des Mieters.\n2. Nutze die contractId, um:\n   - Vertragsbeginn\n   - Vertragsstatus\n   - monatliche Gesamtmiete\n   zu ermitteln.\n3. Ermittle aus dem Vertrag die unitId.\n4. Nutze die unitId, um:\n   - Typ der Einheit\n   - Lage / Bezeichnung\n   - Wohnfläche in qm\n   - Anzahl Zimmer\n   zu ermitteln.\n5. Ermittle aus der unitId oder propertyId die Objektadresse.\n\n# Rules\n- Fülle das Output JSON immer maximal vollständig auf.\n- Falls du zu manchen felder keine Informationen finden kannst, weil diese nicht hinterlegt sind, fülle dies mit \"nicht hinterlegt\".\n- Wenn ein Feld nicht ermittelbar ist, gib explizit an,\n  welcher Endpoint keine Daten geliefert hat.\n- Falls du manche Felder nicht füllen kannst, weil du keinen Zugriff hast diese Informationen zu erfragen, fülle diese mit \"Abfrage nicht möglich, entpunkt {Endpunkt xy} nicht berechtigt\".\n\n# Final Output Rules (VERY IMPORTANT)\n\nBitte beantworte die folgenden Fragen, damit ich den JSON vollständig ausfüllen kann:\n\n### Mieter\n- Wie lautet der vollständige Name des Mieters? (mieter.name)\n- Welche Telefonnummer hat der Mieter? (mieter.kontakt.telefon)\n- Welche E-Mail-Adresse hat der Mieter? (mieter.kontakt.email)\n- Welchen Status hat der Mieter? (z. B. aktiv, inaktiv) (mieter.status)\n\n### Vertrag\n- Wann beginnt der Vertrag? (Format: YYYY-MM-DD) (vertrag.beginn)\n- Welchen Status hat der Vertrag? (z. B. laufend, beendet) (vertrag.status)\n- Wie hoch ist die monatliche Gesamtmiete in Euro? (vertrag.gesamtmiete)\n\n### Einheit\n- Welchen Typ hat die Einheit? (z. B. Wohnung, Büro) (einheit.typ)\n- Wo befindet sich die Einheit? (z. B. Obergeschoss links) (einheit.lage)\n- Wie groß ist die Einheit in Quadratmetern? (einheit.flaeche_qm)\n- Wie viele Zimmer hat die Einheit? (einheit.zimmer)\n\n### Objekt\n- Wie lautet die Straße des Objekts? (objekt.adresse.strasse)\n- Welche Hausnummer hat das Objekt? (objekt.adresse.hausnummer)\n- Welche Postleitzahl hat das Objekt? (objekt.adresse.plz)\n- In welcher Stadt befindet sich das Objekt? (objekt.adresse.stadt)\n\nGib ausschließlich ein valides JSON-Objekt zurück.\nKein Text, keine Erklärung, kein Wrapper.\nKein Feld \"output\".\n\nDer Json soll naher so aufgebaut sein:\n{\n  \"guarantor\": {\n    \"firstName\": \"Max\",\n    \"lastName\": \"Mustermann\",\n    \"birthDate\": \"01.01.1980\",\n    \"address\": \"Musterstraße 1, 12345 Musterstadt\",\n    \"phone\": \"0151 12345678\",\n    \"email\": \"max.mustermann@example.de\"\n  },\n  \"tenant\": {\n    \"firstName\": \"Erika\",\n    \"lastName\": \"Beispiel\",\n    \"birthDate\": \"12.05.1995\",\n    \"address\": \"Beispielweg 10, 44534 Lünen\",\n    \"phone\": \"02306 987654\",\n    \"email\": \"erika.beispiel@example.de\"\n  },\n  \"apartment\": {\n    \"location\": \"1. OG links\",\n    \"address\": \"Hüttenallee 65, 44534 Lünen\"\n  },\n  \"signature\": {\n    \"place\": \"Lünen\",\n    \"date\": \"15.01.2026\"\n  }\n}\n\n",
+          "maxIterations": 20
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        2912
+      ],
+      "id": "ccfaa7cf-e6a8-44e4-8fe7-62fe4e4a0f7a",
+      "name": "Mieter auslesen4"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        3168
+      ],
+      "id": "960e3d37-918d-40b3-ab87-39ba5221f15f",
+      "name": "OpenAI Chat Model7"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://impower.hr-immobilien-mcp.cl.immodigit.de/mcp",
+        "serverTransport": "httpStreamable",
+        "authentication": "headerAuth",
+        "include": "selected",
+        "includeTools": [
+          "get-v-2-contacts",
+          "get-v-2-contacts-contact-id",
+          "get-v-2-contracts",
+          "get-v-2-contracts-contract-id",
+          "get-v-2-units",
+          "get-v-2-units-unit-id",
+          "get-v-2-properties",
+          "get-v-2-properties-property-id"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        3200
+      ],
+      "id": "d14dcf64-2520-40d4-ac59-4ea2f8d9e65d",
+      "name": "MCP Impower (Hausverwalter-Tool)4"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"guarantor\": {\n    \"firstName\": \"Max\",\n    \"lastName\": \"Mustermann\",\n    \"birthDate\": \"01.01.1980\",\n    \"address\": \"Musterstraße 1, 12345 Musterstadt\",\n    \"phone\": \"0151 12345678\",\n    \"email\": \"max.mustermann@example.de\"\n  },\n  \"tenant\": {\n    \"firstName\": \"Erika\",\n    \"lastName\": \"Beispiel\",\n    \"birthDate\": \"12.05.1995\",\n    \"address\": \"Beispielweg 10, 44534 Lünen\",\n    \"phone\": \"02306 987654\",\n    \"email\": \"erika.beispiel@example.de\"\n  },\n  \"apartment\": {\n    \"location\": \"1. OG links\",\n    \"address\": \"Hüttenallee 65, 44534 Lünen\"\n  },\n  \"signature\": {\n    \"place\": \"Lünen\",\n    \"date\": \"15.01.2026\"\n  }\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        736,
+        3216
+      ],
+      "id": "ce13ea77-7f12-4465-869f-0eb4aaf80d1b",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        3392
+      ],
+      "id": "7b03caa6-d664-45e8-842b-71667f1765e9",
+      "name": "OpenAI Chat Model8"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Stellt einen HTTP Request gege die Impower Api, um über den Priaten Endpunkt an den Exchange pla und somit miethöhen zu gelannge.",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        592,
+        3200
+      ],
+      "id": "90c7c8e6-e7b8-4dd2-a7e2-7574abdbc4e7",
+      "name": "Impower APi Exchange Plan3"
+    },
+    {
+      "parameters": {
+        "content": "## Mieter aus Impower laden API Templato\nErkennen ob Mieter im System ist ",
+        "height": 864,
+        "width": 1376,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        2736
+      ],
+      "typeVersion": 1,
+      "id": "206839fe-cdaf-457a-ae57-fda6c03a7f81",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "operation": "URL/HTML to PDF",
+        "convertType": "htmlTemplateToPDF",
+        "templateId": "33801",
+        "templateData": "={\n  \"guarantor\": {\n    \"firstName\": \"{{ $json.output.guarantor.firstName }}\",\n    \"lastName\": \"{{ $json.output.guarantor.lastName }}\",\n    \"birthDate\": \"{{ $json.output.guarantor.birthDate }}\",\n    \"address\": \"{{ $json.output.guarantor.address }}\",\n    \"phone\": \"{{ $json.output.guarantor.phone }}\",\n    \"email\": \"{{ $json.output.guarantor.email }}\"\n  },\n  \"tenant\": {\n    \"firstName\": \"{{ $json.output.tenant.firstName }}\",\n    \"lastName\": \"{{ $json.output.tenant.lastName }}\",\n    \"birthDate\": \"{{ $json.output.tenant.birthDate }}\",\n    \"address\": \"{{ $json.output.tenant.address }}\",\n    \"phone\": \"{{ $json.output.tenant.phone }}\",\n    \"email\": \"{{ $json.output.tenant.email }}\"\n  },\n  \"apartment\": {\n    \"location\": \"{{ $json.output.apartment.location }}\",\n    \"address\": \"{{ $json.output.apartment.address }}\"\n  },\n  \"signature\": {\n    \"place\": \"{{ $json.output.signature.place }}\",\n    \"date\": \"{{ $json.output.signature.date }}\"\n  }\n}\n\n",
+        "advancedOptions": {}
+      },
+      "type": "n8n-nodes-pdfco.PDFco Api",
+      "typeVersion": 1,
+      "position": [
+        944,
+        2912
+      ],
+      "id": "448048d8-4951-4d01-a2c0-c9dfb0d531aa",
+      "name": "PDFco Api3"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Mieter auslesen",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Impower (Hausverwalter-Tool)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Mieter auslesen",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mieterauslesen Impower": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Mieter auslesen1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Impower (Hausverwalter-Tool)1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Mieter auslesen1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Mieter auslesen3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Mieter auslesen",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Documentero",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impower APi Exchange Plan": {
+      "ai_tool": [
+        [
+          {
+            "node": "Mieter auslesen",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Mieter auslesen3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Impower (Hausverwalter-Tool)3": {
+      "ai_tool": [
+        [
+          {
+            "node": "Mieter auslesen3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Mieter auslesen3",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impower APi Exchange Plan2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Mieter auslesen3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mieter auslesen3": {
+      "main": [
+        [
+          {
+            "node": "Create a pdf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mieter auslesen4": {
+      "main": [
+        [
+          {
+            "node": "PDFco Api3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Mieter auslesen4",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Impower (Hausverwalter-Tool)4": {
+      "ai_tool": [
+        [
+          {
+            "node": "Mieter auslesen4",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Mieter auslesen4",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model8": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impower APi Exchange Plan3": {
+      "ai_tool": [
+        [
+          {
+            "node": "Mieter auslesen4",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "pinData": {
+    "Mieterauslesen Impower": [
+      {
+        "json": {
+          "query": "Liebing"
+        }
+      }
+    ]
+  },
+  "staticData": null,
+  "meta": {},
+  "tags": [
+    {
+      "updatedAt": "2026-03-10T19:23:09.277Z",
+      "createdAt": "2026-03-10T19:23:09.277Z",
+      "id": "swUGLTcrmOPf6Rzt",
+      "name": "Helper"
+    },
+    {
+      "updatedAt": "2026-03-13T16:53:36.000Z",
+      "createdAt": "2026-03-13T16:53:36.000Z",
+      "id": "y5JlgcF7wMrJPfaR",
+      "name": "Test"
+    }
+  ],
+  "__backupMeta": {
+    "archived": false,
+    "active": false,
+    "workflowId": "k7m5yBmaJ1L2cUjD"
+  }
+}
