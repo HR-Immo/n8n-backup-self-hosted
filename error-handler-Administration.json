@@ -1,0 +1,131 @@
+{
+  "name": "Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ea149394-2f6a-47e7-ad16-4a91efe34c8c",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "toRecipients": "info@hoewer-roth-immobilien.de, admin@hoewer-roth-immobilien.de, schulze.ja.2005@gmx.de",
+        "subject": "=[⚠️ n8n self hosted Error] {{ $('Error Trigger').item.json.workflow.name }} – Execution {{ $('Error Trigger').item.json.execution.id }}\n",
+        "bodyContent": "=<!DOCTYPE html>\n<html lang=\"de\">\n<head>\n  <meta charset=\"UTF-8\">\n</head>\n\n<body style=\"\n  margin: 0;\n  padding: 40px 20px;\n  font-size: 14px;\n  background-color: #2d2e2e;\n  background-image: radial-gradient(#3e3e3e 1px, transparent 1px);\n  background-size: 12px 12px;\n  font-family: Arial, Helvetica, sans-serif;\n\">\n\n  <div style=\"\n    max-width: 650px;\n    margin: 0 auto;\n    background-color: #222222;\n    border-radius: 8px;\n    overflow: hidden;\n  \">\n\n    <!-- Header / Logo -->\n    <div style=\"\n      background: #040506;\n      padding: 20px;\n      padding-bottom: 10px;\n      text-align: center;\n    \">\n      <img\n        src=\"https://community.n8n.io/uploads/default/original/2X/a/afa2f499837e9dc9d85724dd8f2eb39bf11a0b5f.png\"\n        alt=\"n8n\"\n        style=\"width: 120px; height: auto; display: inline-block;\"\n      >\n    </div>\n\n    <!-- Content -->\n    <div style=\"padding: 24px;\">\n\n      <!-- Title -->\n      <h1 style=\"\n        margin: 0 0 10px;\n        padding-bottom: 10px;\n        border-bottom: 1px solid #444444;\n        font-size: 18px;\n        font-weight: 600;\n        color: #ffffff;\n      \">\n        ❌ n8n Workflow Error\n      </h1>\n\n      <!-- Workflow Box -->\n      <div style=\"\n        background: #2b1d1d;\n        border: 1px solid #a73737;\n        border-radius: 6px;\n        padding: 10px;\n        margin: 12px 0;\n        text-align: center;\n      \">\n        <div style=\"\n          font-size: 16px;\n          font-weight: 700;\n          color: #ff6b6b;\n        \">\n          {{ $('Error Trigger').item.json.workflow.name }}\n        </div>\n      </div>\n\n      <!-- Details Table -->\n      <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n\n        <tr>\n          <td style=\"width:170px;color:#999999;font-weight:500;padding:8px 0;\">\n            Workflow-ID\n          </td>\n          <td style=\"color:#ffffff;padding:8px 0;\">\n            {{ $('Error Trigger').item.json.workflow.id }}\n          </td>\n        </tr>\n\n        <tr>\n          <td style=\"color:#999999;font-weight:500;padding:8px 0;\">\n            Execution-ID\n          </td>\n          <td style=\"color:#ffffff;padding:8px 0;\">\n            {{ $('Error Trigger').item.json.execution.id }}\n          </td>\n        </tr>\n\n        <tr>\n          <td style=\"color:#999999;font-weight:500;padding:8px 0;\">\n            Retry-Versuche\n          </td>\n          <td style=\"color:#ffffff;padding:8px 0;\">\n            {{ $('Error Trigger').item.json.execution.retryOf }}\n          </td>\n        </tr>\n\n        <tr>\n          <td style=\"color:#999999;font-weight:500;padding:8px 0;\">\n            Technische Klasse\n          </td>\n          <td style=\"color:#ffffff;padding:8px 0;\">\n            <strong>{{ $json.technical.class }}</strong>\n            <span style=\"color:#aaaaaa;\">\n              ({{ $json.technical.subcategory }})\n            </span>\n          </td>\n        </tr>\n\n        <tr>\n          <td style=\"color:#999999;font-weight:500;padding:8px 0;\">\n            Confidence\n          </td>\n          <td style=\"color:#ffffff;padding:8px 0;\">\n            {{ $json.technical.confidence }}\n          </td>\n        </tr>\n\n      </table>\n\n      <!-- Error Message -->\n      <h4 style=\"color:#ffffff;margin:24px 0 8px 0;\">\n        Fehlermeldung\n      </h4>\n\n      <div style=\"\n        background: #212830;\n        border: 1px solid #444444;\n        border-radius: 6px;\n        padding: 12px;\n        margin: 12px 0;\n        color: #d1d7e0;\n        font-family: monospace;\n        white-space: pre-wrap;\n      \">\n{{ $('Error Trigger').item.json.execution.error.message }}\n      </div>\n\n      <!-- Button -->\n      <a href=\"{{ $('Error Trigger').item.json.execution.url }}\"\n         style=\"\n           display: inline-block;\n           padding: 10px 14px;\n           background: #EA4B71;\n           color: #ffffff;\n           text-decoration: none;\n           border-radius: 6px;\n           margin-top: 10px;\n           font-weight: 600;\n         \">\n        🔎 Execution in n8n öffnen\n      </a>\n\n      <!-- Footer -->\n      <div style=\"\n        margin-top: 20px;\n        padding-top: 16px;\n        border-top: 1px solid #444444;\n        color: #999999;\n        font-size: 12px;\n        text-align: center;\n      \">\n        n8n Error Handler · Automatische Benachrichtigung\n      </div>\n\n    </div>\n  </div>\n\n</body>\n</html>\n",
+        "additionalFields": {
+          "importance": "High",
+          "bodyContentType": "html"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        496,
+        0
+      ],
+      "id": "e2cec736-6c90-420b-b03a-88fc68146d40",
+      "name": "Send a message",
+      "webhookId": "ff1e9995-e183-4232-be79-e0f79743d016",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "X0YJFLk6PhSky7LX",
+          "name": "admin@"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.all()[0]?.json ?? {};\n\n// ✅ RICHTIGER Pfad zur Error Message\nconst message = raw?.execution?.error?.message ?? \"\";\nconst stack   = raw?.execution?.error?.stack ?? \"\";\n\n// Technische Klassifizierung\nfunction classifyTechnicalError(message = \"\", stack = \"\") {\n  const msg = String(message).toLowerCase();\n  const st  = String(stack).toLowerCase();\n\n  // 🧠 Code Node Fehler (line <number>)\n  if (/line\\s+\\d+/i.test(message)) {\n    return {\n      class: \"logic\",\n      subcategory: \"code_node_error\",\n      confidence: 0.95\n    };\n  }\n\n  // Auth\n  if (\n    msg.includes(\"401\") ||\n    msg.includes(\"403\") ||\n    msg.includes(\"unauthorized\") ||\n    msg.includes(\"forbidden\") ||\n    msg.includes(\"invalid_grant\")\n  ) {\n    return { class: \"auth\", subcategory: \"forbidden_or_token\", confidence: 0.95 };\n  }\n\n  // Rate limit / throttling\n  if (\n    msg.includes(\"rate limit\") ||\n    msg.includes(\"ratelimit\") ||\n    msg.includes(\"too many requests\") ||\n    msg.includes(\"429\") ||\n    msg.includes(\"throttle\")\n  ) {\n    return { class: \"rate_limit\", subcategory: \"throttled\", confidence: 0.9 };\n  }\n\n  // Timeout\n  if (msg.includes(\"timeout\") || st.includes(\"timeout\") || msg.includes(\"etimedout\")) {\n    return { class: \"timeout\", subcategory: \"upstream_timeout\", confidence: 0.85 };\n  }\n\n  // Network / DNS / Connection\n  if (\n    msg.includes(\"enotfound\") ||\n    msg.includes(\"econnreset\") ||\n    msg.includes(\"econnrefused\") ||\n    msg.includes(\"network\") ||\n    msg.includes(\"socket hang up\") ||\n    msg.includes(\"getaddrinfo\")\n  ) {\n    return { class: \"network\", subcategory: \"connection\", confidence: 0.8 };\n  }\n\n  // Data / Missing input\n  if (\n    msg.includes(\"nicht gefunden\") ||\n    msg.includes(\"not found\") ||\n    msg.includes(\"undefined\") ||\n    msg.includes(\"cannot read\") ||\n    msg.includes(\"null\") ||\n    msg.includes(\"missing\")\n  ) {\n    return { class: \"data\", subcategory: \"missing_or_invalid\", confidence: 0.85 };\n  }\n\n  // Generic logic / exception\n  if (\n    st.includes(\"vmcontext\") ||\n    st.includes(\"task-runner\") ||\n    st.includes(\"code(\") ||\n    msg.includes(\"error:\") ||\n    msg.includes(\"exception\")\n  ) {\n    return { class: \"logic\", subcategory: \"exception\", confidence: 0.75 };\n  }\n\n  return { class: \"unknown\", subcategory: \"unclassified\", confidence: 0.3 };\n}\n\n// ✅ Korrekte Übergabe\nconst technical = classifyTechnicalError(message, stack);\n\n// ✅ Output: Message + Klassifikation\nreturn [{\n  json: {\n    technical\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "82798963-7aa4-476e-88a7-94d512e84e2c",
+      "name": "Error Klassifizieren"
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error Klassifizieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Klassifizieren": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "UOTTrHniJeBc7Vgx",
+    "callerPolicy": "workflowsFromSameOwner",
+    "timeSavedPerExecution": 0
+  },
+  "pinData": {
+    "Error Trigger": [
+      {
+        "json": {
+          "execution": {
+            "id": 231,
+            "url": "https://hoewer-roth-immobilien.app.n8n.cloud/execution/workflow/1/231",
+            "retryOf": "34",
+            "error": {
+              "message": "Example Error Message",
+              "stack": "Stacktrace"
+            },
+            "lastNodeExecuted": "Node With Error",
+            "mode": "manual"
+          },
+          "workflow": {
+            "id": "1",
+            "name": "Example Workflow"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [
+    {
+      "updatedAt": "2026-03-13T16:58:22.838Z",
+      "createdAt": "2026-03-13T16:58:22.838Z",
+      "id": "O0h5fhHhihgPLwt9",
+      "name": "Administration"
+    }
+  ],
+  "__backupMeta": {
+    "archived": false,
+    "active": true,
+    "workflowId": "UOTTrHniJeBc7Vgx"
+  }
+}
