@@ -1,0 +1,208 @@
+{
+  "name": "Umsetzungsideen: iPhone → Notion",
+  "nodes": [
+    {
+      "id": "44c6f514-4b76-4f5a-a5ce-63d0790df7c3",
+      "name": "Sprachnotiz empfangen",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        304
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "umsetzungsidee",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "011fd7fa-64f2-42cd-ad75-4ce40957269a"
+    },
+    {
+      "id": "48a799a2-4429-44cf-84f7-06e68b567bb1",
+      "name": "Sprache transkribieren",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        304
+      ],
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "audio",
+        "options": {
+          "language": "de"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "id": "d63d9063-29fb-4154-86ef-f4079dda651a",
+      "name": "Zusammenfassung erstellen",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        304
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "system",
+              "content": "Du bist ein Assistent fuer HR Immobilien. Fasse die folgende Idee als 2-3 knappe Stichpunkte auf Deutsch zusammen. Jeder Stichpunkt beginnt mit einem Bindestrich. Keine Einleitung, kein Abschluss, nur die Stichpunkte. Die Zusammenfassung muss kuerzer sein als der Originaltext."
+            },
+            {
+              "type": "text",
+              "role": "user",
+              "content": "={{ $('Sprache transkribieren').item.json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "id": "fef8f605-efe9-40e8-9114-16e980cae95d",
+      "name": "Idee in Notion speichern",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1024,
+        304
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "349091ad-b3c5-8022-92d9-cf1108e3cd94",
+          "cachedResultName": "Umsetzungsideen"
+        },
+        "title": "={{ $('Sprache transkribieren').item.json.text }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "KI-generierte Zusammenfassung|rich_text",
+              "type": "rich_text",
+              "richText": false,
+              "textContent": "={{ $('Zusammenfassung erstellen').item.json.output[0].content[0].text }}"
+            },
+            {
+              "key": "Status|status",
+              "type": "status",
+              "statusValue": "Neue Idee"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "39qfiiAQCbeCGlCV",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "789301ae-4553-42f8-9a57-a8ca7fa4873c",
+      "name": "Bestätigung senden",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1264,
+        304
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=Idee gespeichert! {{ $('Zusammenfassung erstellen').item.json.output[0].content[0].text }}"
+      }
+    }
+  ],
+  "connections": {
+    "Sprachnotiz empfangen": {
+      "main": [
+        [
+          {
+            "node": "Sprache transkribieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprache transkribieren": {
+      "main": [
+        [
+          {
+            "node": "Zusammenfassung erstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zusammenfassung erstellen": {
+      "main": [
+        [
+          {
+            "node": "Idee in Notion speichern",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idee in Notion speichern": {
+      "main": [
+        [
+          {
+            "node": "Bestätigung senden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "UOTTrHniJeBc7Vgx",
+    "callerPolicy": "workflowsFromSameOwner",
+    "timeSavedPerExecution": 1
+  },
+  "pinData": {},
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true
+  },
+  "tags": [],
+  "__backupMeta": {
+    "archived": false,
+    "active": true,
+    "workflowId": "Ks39EDxMUCpYrZZv"
+  }
+}
