@@ -1,0 +1,388 @@
+{
+  "name": "Archiviert/Umsetzungsideen: Telegram → Notion",
+  "nodes": [
+    {
+      "id": "6c82e5f0-fc90-4906-aab6-e9fc5337b39c",
+      "name": "Neue Nachricht",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "updates": [
+          "message"
+        ]
+      },
+      "webhookId": "299444a1-ee20-46d4-9c41-e194a3d25523"
+    },
+    {
+      "id": "e7282808-7bc4-412f-a373-de4045df2682",
+      "name": "Sprache oder Text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "voice-check",
+              "leftValue": "={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "575fbc4a-9d78-4dab-9d24-9671ee054a85",
+      "name": "Audio herunterladen",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        140
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "download": true,
+        "additionalFields": {
+          "mimeType": "audio/ogg"
+        }
+      },
+      "webhookId": "4716abf6-6337-433b-9ff0-fea3c2cbc18f"
+    },
+    {
+      "id": "3f516a55-0efd-4584-b430-3a4dabf2ee3b",
+      "name": "Sprache transkribieren",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        140
+      ],
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "data",
+        "options": {
+          "language": "de"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "id": "99f56deb-1e5d-4e8f-bb03-7247b3401004",
+      "name": "Transkription normalisieren",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        140
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fullText-voice",
+              "name": "fullText",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "chatId-voice",
+              "name": "chatId",
+              "value": "={{ $('Neue Nachricht').item.json.message.chat.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "39540902-de34-4303-92c1-990fea27ad0d",
+      "name": "Texte zusammenführen",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "4532d0be-41e2-4a37-a5c2-88b7869514e2",
+      "name": "Textnachricht normalisieren",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        460
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fullText-text",
+              "name": "fullText",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "chatId-text",
+              "name": "chatId",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "408ed328-75a9-4935-b6b4-31675aece6a5",
+      "name": "Zusammenfassung erstellen",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1680,
+        300
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "system",
+              "content": "Du bist ein Assistent für HR Immobilien. Fasse die folgende Idee in 1-2 prägnanten Sätzen auf Deutsch zusammen. Gib nur die Zusammenfassung aus, ohne Präfix."
+            },
+            {
+              "type": "text",
+              "role": "user",
+              "content": "={{ $json.fullText }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "0UFK9tCWJOICVBHf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "id": "4b817568-6ffd-4ff1-ac6c-30d9ae471554",
+      "name": "Idee in Notion speichern",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        300
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<__PLACEHOLDER_VALUE__Notion Datenbank-ID (aus der Seiten-URL kopieren)__>"
+        },
+        "title": "={{ $('Texte zusammenführen').item.json.fullText }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "KI-generierte Zusammenfassung|rich_text",
+              "type": "rich_text",
+              "richText": false,
+              "textContent": "={{ $json.output }}"
+            },
+            {
+              "key": "Status|status",
+              "type": "status",
+              "statusValue": "Neue Idee"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e268e0cf-c8b4-41e2-b859-cd18fd60e2e3",
+      "name": "Bestätigung senden",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2160,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Texte zusammenführen').item.json.chatId }}",
+        "text": "=Idee gespeichert! {{ $('Zusammenfassung erstellen').item.json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "webhookId": "e4c127af-ebd7-4ef8-b89a-fb1ff14000b7"
+    }
+  ],
+  "connections": {
+    "Neue Nachricht": {
+      "main": [
+        [
+          {
+            "node": "Sprache oder Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprache oder Text?": {
+      "main": [
+        [
+          {
+            "node": "Audio herunterladen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Textnachricht normalisieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio herunterladen": {
+      "main": [
+        [
+          {
+            "node": "Sprache transkribieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprache transkribieren": {
+      "main": [
+        [
+          {
+            "node": "Transkription normalisieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transkription normalisieren": {
+      "main": [
+        [
+          {
+            "node": "Texte zusammenführen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texte zusammenführen": {
+      "main": [
+        [
+          {
+            "node": "Zusammenfassung erstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Textnachricht normalisieren": {
+      "main": [
+        [
+          {
+            "node": "Texte zusammenführen",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Zusammenfassung erstellen": {
+      "main": [
+        [
+          {
+            "node": "Idee in Notion speichern",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idee in Notion speichern": {
+      "main": [
+        [
+          {
+            "node": "Bestätigung senden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true
+  },
+  "tags": [],
+  "__backupMeta": {
+    "archived": true,
+    "active": false,
+    "workflowId": "sGyuvGiFYbVDVHng"
+  }
+}
