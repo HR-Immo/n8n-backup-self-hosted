@@ -2,31 +2,43 @@
   "name": "Automated daily workflow backup to GitHub",
   "nodes": [
     {
-      "id": "fa881e75-fa5d-4033-b2e6-a9a519d3fe03",
-      "name": "Schedule Trigger",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        32,
-        128
-      ],
       "parameters": {
         "rule": {
           "interval": [
             {}
           ]
         }
-      }
+      },
+      "id": "c83ffef6-9fea-4c0c-bb70-276d21a31a60",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        32,
+        128
+      ],
+      "typeVersion": 1.2
     },
     {
-      "id": "b8f7031e-fd36-403e-919a-7903c0c97785",
-      "name": "List files from repo",
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1,
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d582886f-5b92-4a1c-ab23-68ca67f3b70d",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.aggregate",
       "position": [
-        208,
-        64
+        784,
+        128
       ],
+      "typeVersion": 1
+    },
+    {
       "parameters": {
         "resource": "file",
         "operation": "list",
@@ -44,35 +56,238 @@
         },
         "filePath": "="
       },
+      "id": "41c5086c-7937-46e6-91cc-9add2b0b32cc",
+      "name": "List files from repo",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        208,
+        64
+      ],
+      "webhookId": "354d699e-44b0-4444-9d31-af7fd4ff5561",
+      "typeVersion": 1,
+      "alwaysOutputData": true,
       "credentials": {
         "githubApi": {
           "id": "QoCFh84k1y3oa2QL",
           "name": "GitHub account"
         }
-      },
-      "alwaysOutputData": true,
-      "webhookId": "02d0a90f-99f9-4b1b-859d-cddf6ee04475"
+      }
     },
     {
-      "id": "844f6165-353c-4f89-b0fc-2c0d18235fd3",
-      "name": "Merge",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "HR-Immo",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-Backup-self-hosted",
+          "mode": "list",
+          "cachedResultName": "n8n-Backup-self-hosted",
+          "cachedResultUrl": "https://github.com/HR-Immo/n8n-Backup-self-hosted"
+        },
+        "filePath": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json",
+        "fileContent": "={{ $('To base64').item.json.data }}",
+        "commitMessage": "=backup-{{ $('Commit date & file name').item.json.commitDate }}"
+      },
+      "id": "f466aac0-50a7-4f73-a86a-d7f222c3f9dc",
+      "name": "Update file",
+      "type": "n8n-nodes-base.github",
       "position": [
-        592,
+        2032,
+        48
+      ],
+      "webhookId": "27218087-8df7-474d-a39f-70cfa9c34ec8",
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "QoCFh84k1y3oa2QL",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "HR-Immo",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-Backup-self-hosted",
+          "mode": "list",
+          "cachedResultName": "n8n-Backup-self-hosted",
+          "cachedResultUrl": "https://github.com/HR-Immo/n8n-Backup-self-hosted"
+        },
+        "filePath": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json",
+        "fileContent": "={{ $('To base64').item.json.data }}",
+        "commitMessage": "=backup-{{ $node['Commit date & file name'].json.commitDate }}"
+      },
+      "id": "0853b306-d7ab-4be6-91d9-04d289de50ba",
+      "name": "Upload file",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        2032,
+        208
+      ],
+      "webhookId": "ce4b561b-acb9-4cd8-b76f-4928dada9674",
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "QoCFh84k1y3oa2QL",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true
+        }
+      },
+      "id": "6b4eeded-35b2-4fcc-bf5d-2cb3e37a80ed",
+      "name": "Json file",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [
+        1328,
         128
       ],
-      "parameters": {}
+      "typeVersion": 1.1
     },
     {
-      "id": "7fe59392-bdd2-49e2-8df2-17e6d372ec13",
-      "name": "List files from repo1",
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1,
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "id": "4546da00-bb83-418b-a227-55c0c36f1bfc",
+      "name": "To base64",
+      "type": "n8n-nodes-base.extractFromFile",
       "position": [
-        208,
-        192
+        1488,
+        128
       ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Retrieve previous file names from Github",
+        "height": 380,
+        "width": 924,
+        "color": 5
+      },
+      "id": "11971cc7-8723-478c-a64a-5fedc955711a",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe4a36ef-9f04-40e3-99bd-cc517a49b440",
+              "name": "commitDate",
+              "type": "string",
+              "value": "={{ $now.format('dd-MM-yyyy/H:mm') }}"
+            },
+            {
+              "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
+              "name": "fileName",
+              "type": "string",
+              "value": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "957bb960-3f53-444d-a584-476677d3c225",
+      "name": "Commit date & file name",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1680,
+        128
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "content": "### Retrieve and process workflows from n8n",
+        "height": 380,
+        "width": 684,
+        "color": 3
+      },
+      "id": "979d649b-0876-45ed-9b85-6e1c08e5a1e7",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        944,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Commit + edit/create files if needed",
+        "height": 380,
+        "width": 588,
+        "color": 4
+      },
+      "id": "44b11666-570f-4509-86ed-30a31b463e69",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1648,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.hoewer-roth-immobilien.de/api/v1/workflows",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "n8nApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1008,
+        128
+      ],
+      "id": "014ad5fc-fa0c-436b-b77f-24a453facdb0",
+      "name": "Retrieve workflows",
+      "credentials": {
+        "n8nApi": {
+          "id": "00fSEH7hxMawsVzn",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Prepare workflows for backup\n * - keep all workflows (incl. archived)\n * - ONLY: prefix workflow name with \"Archiviert/\" if archived\n * - keep tags untouched\n * - output directly importable n8n workflow JSON\n */\n\nconst workflows = $json.data ?? [];\n\nreturn workflows.map((wf) => {\n  const isArchived = wf.isArchived === true;\n\n  return {\n    json: {\n      // ✅ ONLY change requested: prefix name when archived\n      name: isArchived ? `Archiviert/${wf.name}` : wf.name,\n\n      // import-relevant fields\n      nodes: wf.nodes ?? [],\n      connections: wf.connections ?? {},\n      settings: wf.settings ?? { executionOrder: 'v1' },\n\n      // optional but valid\n      pinData: wf.pinData ?? undefined,\n      staticData: wf.staticData ?? null,\n      meta: wf.meta ?? {},\n\n      // keep tags (used later for filename)\n      tags: wf.tags ?? [],\n\n      // keep useful info (optional)\n      __backupMeta: {\n        archived: isArchived,\n        active: wf.active === true,\n        workflowId: wf.id,\n      },\n    },\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        128
+      ],
+      "id": "29fe2f5f-e0f4-48c4-ae2b-cc28e0c81ad6",
+      "name": "Code in JavaScript"
+    },
+    {
       "parameters": {
         "resource": "file",
         "operation": "list",
@@ -90,24 +305,35 @@
         },
         "filePath": "=/archiviert"
       },
+      "id": "3e40ea37-3b4e-40d2-a5c4-1a1c0b02a446",
+      "name": "List files from repo1",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        208,
+        192
+      ],
+      "webhookId": "354d699e-44b0-4444-9d31-af7fd4ff5561",
+      "typeVersion": 1,
+      "alwaysOutputData": true,
       "credentials": {
         "githubApi": {
           "id": "QoCFh84k1y3oa2QL",
           "name": "GitHub account"
         }
-      },
-      "alwaysOutputData": true,
-      "webhookId": "e109a86d-d69f-4875-aec3-3ce292e16dce"
+      }
     },
     {
-      "id": "4f7294b4-deb3-41d2-a4e0-7e37e22614e2",
-      "name": "Edit Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
       "position": [
-        416,
-        192
+        592,
+        128
       ],
+      "id": "f767505b-f896-4acc-a712-09f0d254bce8",
+      "name": "Merge"
+    },
+    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -174,371 +400,45 @@
           ]
         },
         "options": {}
-      }
-    },
-    {
-      "id": "fced72e2-039d-427b-b414-5542aec644d5",
-      "name": "Build file index",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        784,
-        128
-      ],
-      "parameters": {
-        "jsCode": "// Build lookup map { filename: sha } from all GitHub repo files.\n// Root files: name = filename only (e.g. \"my-workflow-tag.json\")\n// Archiviert files: name was mapped to path by Edit Fields (e.g. \"archiviert/my-workflow-tag.json\")\nconst files = $input.all();\nconst fileIndex = {};\nfor (const item of files) {\n  const name = item.json.name;\n  const sha = item.json.sha;\n  if (name && sha) {\n    fileIndex[name] = sha;\n  }\n}\nreturn [{ json: { fileIndex } }];"
-      }
-    },
-    {
-      "id": "c1a0e279-3aa7-4cc1-b8e4-28b5dddfb829",
-      "name": "Retrieve workflows",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        1008,
-        128
-      ],
-      "parameters": {
-        "url": "https://n8n.hoewer-roth-immobilien.de/api/v1/workflows",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "n8nApi",
-        "options": {}
       },
-      "credentials": {
-        "n8nApi": {
-          "id": "00fSEH7hxMawsVzn",
-          "name": "n8n account"
-        }
-      }
-    },
-    {
-      "id": "661c291f-d674-4035-9516-07edef784dc0",
-      "name": "Code in JavaScript",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1168,
-        128
-      ],
-      "parameters": {
-        "jsCode": "const workflows = $json.data ?? [];\n\nreturn workflows.map((wf) => {\n  const isArchived = wf.isArchived === true;\n\n  return {\n    json: {\n      name: isArchived ? `Archiviert/${wf.name}` : wf.name,\n      nodes: wf.nodes ?? [],\n      connections: wf.connections ?? {},\n      settings: wf.settings ?? { executionOrder: 'v1' },\n      pinData: wf.pinData ?? undefined,\n      staticData: wf.staticData ?? null,\n      meta: wf.meta ?? {},\n      tags: wf.tags ?? [],\n      __backupMeta: {\n        archived: isArchived,\n        active: wf.active === true,\n        workflowId: wf.id,\n      },\n    },\n  };\n});"
-      }
-    },
-    {
-      "id": "99b4c864-7ca4-45ca-b7ca-ea873ea43b8f",
-      "name": "Json file",
-      "type": "n8n-nodes-base.convertToFile",
-      "typeVersion": 1.1,
-      "position": [
-        1328,
-        128
-      ],
-      "parameters": {
-        "operation": "toJson",
-        "mode": "each",
-        "options": {
-          "format": true
-        }
-      }
-    },
-    {
-      "id": "8fe0442d-6213-42f1-b4e7-87558e728482",
-      "name": "To base64",
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1,
-      "position": [
-        1488,
-        128
-      ],
-      "parameters": {
-        "operation": "binaryToPropery",
-        "options": {}
-      }
-    },
-    {
-      "id": "69ddc052-2090-4bdc-ae39-9cf4b3592cbd",
-      "name": "Commit date & file name",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1680,
-        128
+        416,
+        192
       ],
+      "id": "5b6d8ae4-3e1e-49b3-a2a6-e6e8e30fd742",
+      "name": "Edit Fields"
+    },
+    {
       "parameters": {
-        "assignments": {
-          "assignments": [
+        "conditions": {
+          "string": [
             {
-              "id": "fe4a36ef-9f04-40e3-99bd-cc517a49b440",
-              "name": "commitDate",
-              "type": "string",
-              "value": "={{ $now.format('dd-MM-yyyy/H:mm') }}"
-            },
-            {
-              "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
-              "name": "fileName",
-              "type": "string",
-              "value": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json"
+              "value1": "={{ $('Aggregate').item.json.name }}",
+              "operation": "contains",
+              "value2": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json"
             }
           ]
         },
-        "options": {}
-      }
-    },
-    {
-      "id": "c3866df3-ce4b-4a85-9bea-ddf7304fc120",
-      "name": "Lookup file",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+        "combineOperation": "any"
+      },
+      "id": "81641bb7-c38d-43db-ad87-40ce598802d3",
+      "name": "Check if file exists",
+      "type": "n8n-nodes-base.if",
       "position": [
         1856,
         128
       ],
-      "parameters": {
-        "jsCode": "// Verarbeitet alle Items und prueft fuer jedes ob die Backup-Datei in GitHub existiert.\n// $input.all() statt $input.item, damit alle N Workflows erhalten bleiben.\nconst fileIndex = $('Build file index').first().json.fileIndex ?? {};\nconst results = [];\n\nfor (const item of $input.all()) {\n  const fileName = item.json.fileName;\n  const sha = fileIndex[fileName] ?? null;\n\n  results.push({\n    json: {\n      ...item.json,\n      sha,\n      fileExists: sha !== null,\n    }\n  });\n}\n\nreturn results;"
-      }
-    },
-    {
-      "id": "14696fc0-071a-4401-8ba4-13cec3d4fe89",
-      "name": "Route: create or update",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2064,
-        128
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "fileexists-check",
-              "leftValue": "={{ $json.sha }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "66050408-3a9e-4a9a-98ae-c9ed7ff3fd07",
-      "name": "Update file",
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1,
-      "position": [
-        2272,
-        48
-      ],
-      "parameters": {
-        "resource": "file",
-        "operation": "edit",
-        "owner": {
-          "__rl": true,
-          "value": "HR-Immo",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "n8n-Backup-self-hosted",
-          "mode": "list",
-          "cachedResultName": "n8n-Backup-self-hosted",
-          "cachedResultUrl": "https://github.com/HR-Immo/n8n-Backup-self-hosted"
-        },
-        "filePath": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json",
-        "fileContent": "={{ $('To base64').item.json.data }}",
-        "commitMessage": "=backup-{{ $('Commit date & file name').item.json.commitDate }}"
-      },
-      "credentials": {
-        "githubApi": {
-          "id": "QoCFh84k1y3oa2QL",
-          "name": "GitHub account"
-        }
-      },
-      "webhookId": "d9e74849-304f-454b-90d9-924c0247ebad"
-    },
-    {
-      "id": "0d49b8ff-93da-4f14-9281-7d5c5a6b138d",
-      "name": "Upload file",
-      "type": "n8n-nodes-base.github",
-      "typeVersion": 1,
-      "position": [
-        2272,
-        208
-      ],
-      "parameters": {
-        "resource": "file",
-        "operation": "create",
-        "owner": {
-          "__rl": true,
-          "value": "HR-Immo",
-          "mode": "name"
-        },
-        "repository": {
-          "__rl": true,
-          "value": "n8n-Backup-self-hosted",
-          "mode": "list",
-          "cachedResultName": "n8n-Backup-self-hosted",
-          "cachedResultUrl": "https://github.com/HR-Immo/n8n-Backup-self-hosted"
-        },
-        "filePath": "={{ $('Code in JavaScript').item.json.name.replace(/\\s+/g, '-').toLowerCase() }}-{{ $('Code in JavaScript').item.json.tags[0].name }}.json",
-        "fileContent": "={{ $('To base64').item.json.data }}",
-        "commitMessage": "=backup-{{ $node['Commit date & file name'].json.commitDate }}"
-      },
-      "credentials": {
-        "githubApi": {
-          "id": "QoCFh84k1y3oa2QL",
-          "name": "GitHub account"
-        }
-      },
-      "webhookId": "ce958dad-87eb-4150-97cb-d3d0a7bb9565"
-    },
-    {
-      "id": "270d55fd-26ce-4b0c-bac5-1e9d09da4203",
-      "name": "Sticky Note1",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        0,
-        0
-      ],
-      "parameters": {
-        "content": "### Retrieve previous file names from Github",
-        "height": 380,
-        "width": 924,
-        "color": 5
-      }
-    },
-    {
-      "id": "5536bdd5-a2b6-4359-a519-c36d05f23266",
-      "name": "Sticky Note2",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        944,
-        0
-      ],
-      "parameters": {
-        "content": "### Retrieve and process workflows from n8n",
-        "height": 380,
-        "width": 684,
-        "color": 3
-      }
-    },
-    {
-      "id": "70a15962-8797-4965-928b-a9bd6b55e291",
-      "name": "Sticky Note3",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1648,
-        0
-      ],
-      "parameters": {
-        "content": "### Commit + edit/create files if needed",
-        "height": 380,
-        "width": 876,
-        "color": 4
-      }
+      "typeVersion": 1
     }
   ],
   "connections": {
-    "Schedule Trigger": {
-      "main": [
-        [
-          {
-            "node": "List files from repo",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "List files from repo1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "List files from repo": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Build file index",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "List files from repo1": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Fields": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Build file index": {
+    "Aggregate": {
       "main": [
         [
           {
             "node": "Retrieve workflows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Retrieve workflows": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "Json file",
             "type": "main",
             "index": 0
           }
@@ -567,29 +467,100 @@
         ]
       ]
     },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "List files from repo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "List files from repo1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List files from repo": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Commit date & file name": {
       "main": [
         [
           {
-            "node": "Lookup file",
+            "node": "Check if file exists",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Lookup file": {
+    "Retrieve workflows": {
       "main": [
         [
           {
-            "node": "Route: create or update",
+            "node": "Code in JavaScript",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Route: create or update": {
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Json file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List files from repo1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Check if file exists": {
       "main": [
         [
           {
