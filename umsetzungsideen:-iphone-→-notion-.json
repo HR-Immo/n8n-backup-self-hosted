@@ -2,7 +2,7 @@
   "name": "Umsetzungsideen: iPhone → Notion",
   "nodes": [
     {
-      "id": "44c6f514-4b76-4f5a-a5ce-63d0790df7c3",
+      "id": "b2698e3a-9d0e-4f62-8189-3f6a6cf5c9c1",
       "name": "Sprachnotiz empfangen",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -16,10 +16,10 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "webhookId": "011fd7fa-64f2-42cd-ad75-4ce40957269a"
+      "webhookId": "e032d580-78cc-4473-81ee-aafc4fbe4ff2"
     },
     {
-      "id": "48a799a2-4429-44cf-84f7-06e68b567bb1",
+      "id": "45d635c7-e235-44ce-8b6e-4bbded30dfca",
       "name": "Sprache transkribieren",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
@@ -43,7 +43,7 @@
       }
     },
     {
-      "id": "d63d9063-29fb-4154-86ef-f4079dda651a",
+      "id": "6ca1da8a-dc8b-4599-9e30-eae2b575f774",
       "name": "Zusammenfassung erstellen",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
@@ -83,13 +83,142 @@
       }
     },
     {
-      "id": "fef8f605-efe9-40e8-9114-16e980cae95d",
+      "id": "60476629-19ec-4c6c-9c52-bb143c0ac399",
+      "name": "Notion-User abrufen",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        304
+      ],
+      "parameters": {
+        "resource": "user",
+        "operation": "getAll"
+      },
+      "executeOnce": true,
+      "credentials": {
+        "notionApi": {
+          "id": "39qfiiAQCbeCGlCV",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "5c5d7228-eb07-4e42-b7d7-f8b34f56d2ca",
+      "name": "User-ID ermitteln",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        304
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const senderEmail = ($('Sprachnotiz empfangen').first().json.query?.sender ?? '').toLowerCase();\nconst users = $input.all();\n\nconst match = users.find(u =>\n  u.json.type === 'person' &&\n  u.json.person?.email?.toLowerCase() === senderEmail\n);\n\nreturn [{\n  json: {\n    notionUserId: match?.json.id ?? null,\n    senderName: match?.json.name ?? senderEmail\n  }\n}];"
+      }
+    },
+    {
+      "id": "e22c982a-d401-4298-ad63-6251e4ffcf43",
+      "name": "Person gefunden?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        304
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-notion-user",
+              "leftValue": "={{ $json.notionUserId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "76fed5fa-df88-4063-8101-e22ed2251d09",
       "name": "Idee in Notion speichern",
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        1024,
+        1680,
+        180
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "349091ad-b3c5-8022-92d9-cf1108e3cd94",
+          "cachedResultName": "Umsetzungsideen"
+        },
+        "title": "={{ $('Sprache transkribieren').item.json.text }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "KI-generierte Zusammenfassung|rich_text",
+              "type": "rich_text",
+              "richText": false,
+              "textContent": "={{ $('Zusammenfassung erstellen').item.json.output[0].content[0].text }}"
+            },
+            {
+              "key": "Status|status",
+              "type": "status",
+              "statusValue": "Neue Idee"
+            },
+            {
+              "key": "Eingereicht von|people",
+              "type": "people",
+              "peopleValue": [
+                "={{ $json.notionUserId }}"
+              ]
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "39qfiiAQCbeCGlCV",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "d0d7eae5-e116-4901-821d-0ff6fe4846f4",
+      "name": "Bestätigung senden",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1920,
         304
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=Idee gespeichert! {{ $('Zusammenfassung erstellen').item.json.output[0].content[0].text }}"
+      }
+    },
+    {
+      "id": "12aca5fe-5820-4464-84e1-de026ffd2b16",
+      "name": "Idee in Notion speichern (ohne Zuordnung)",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        428
       ],
       "parameters": {
         "resource": "databasePage",
@@ -123,20 +252,6 @@
           "name": "Notion account"
         }
       }
-    },
-    {
-      "id": "789301ae-4553-42f8-9a57-a8ca7fa4873c",
-      "name": "Bestätigung senden",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
-      "position": [
-        1264,
-        304
-      ],
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "=Idee gespeichert! {{ $('Zusammenfassung erstellen').item.json.output[0].content[0].text }}"
-      }
     }
   ],
   "connections": {
@@ -166,7 +281,47 @@
       "main": [
         [
           {
+            "node": "Notion-User abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion-User abrufen": {
+      "main": [
+        [
+          {
+            "node": "User-ID ermitteln",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User-ID ermitteln": {
+      "main": [
+        [
+          {
+            "node": "Person gefunden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Person gefunden?": {
+      "main": [
+        [
+          {
             "node": "Idee in Notion speichern",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Idee in Notion speichern (ohne Zuordnung)",
             "type": "main",
             "index": 0
           }
@@ -174,6 +329,17 @@
       ]
     },
     "Idee in Notion speichern": {
+      "main": [
+        [
+          {
+            "node": "Bestätigung senden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idee in Notion speichern (ohne Zuordnung)": {
       "main": [
         [
           {
