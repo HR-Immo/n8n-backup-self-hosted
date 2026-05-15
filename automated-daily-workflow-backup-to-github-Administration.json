@@ -582,7 +582,7 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": true,
+    "availableInMCP": false,
     "timeSavedMode": "fixed",
     "errorWorkflow": "UOTTrHniJeBc7Vgx",
     "callerPolicy": "workflowsFromSameOwner"
@@ -606,7 +606,7 @@
   ],
   "__backupMeta": {
     "archived": false,
-    "active": true,
+    "active": false,
     "workflowId": "UQl0Rw7TLaYtGeEg"
   }
 }
