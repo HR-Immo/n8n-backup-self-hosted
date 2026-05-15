@@ -380,7 +380,7 @@
               "id": "7c53dc45-34d8-4bee-bd4d-3eb6b3e1da94",
               "name": "my_n8n_url",
               "type": "string",
-              "value": "https://hoewer-roth-immobilien.app.n8n.cloud"
+              "value": "https://n8n.hoewer-roth-immobilien.de"
             },
             {
               "id": "d3ecc033-4ad6-4db8-bbd3-1ed144933170",
