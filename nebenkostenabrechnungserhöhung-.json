@@ -1156,7 +1156,7 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": true
+    "availableInMCP": false
   },
   "pinData": {},
   "staticData": null,
