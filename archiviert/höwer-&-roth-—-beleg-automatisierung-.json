@@ -2,6 +2,36 @@
   "name": "Archiviert/Höwer & Roth — Beleg-Automatisierung",
   "nodes": [
     {
+      "parameters": {},
+      "id": "bc36a25d-e623-4b6b-ada6-46ef0f705faf",
+      "name": "Fehler-Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "justus@hoewer-roth-immobilien.de",
+        "toEmail": "justus@hoewer-roth-immobilien.de",
+        "subject": "=⚠️ n8n Fehler: {{ $json.workflow.name }}",
+        "emailFormat": "html",
+        "html": "=<h3>Workflow-Fehler</h3><table style='border-collapse:collapse;font-family:sans-serif;font-size:14px'><tr><td style='padding:4px 12px;font-weight:bold'>Workflow</td><td>{{ $json.workflow.name }}</td></tr><tr><td style='padding:4px 12px;font-weight:bold'>Node</td><td>{{ $json.execution.lastNodeExecuted }}</td></tr><tr><td style='padding:4px 12px;font-weight:bold'>Fehler</td><td style='color:#c00'>{{ $json.execution.error.message }}</td></tr><tr><td style='padding:4px 12px;font-weight:bold'>Zeit</td><td>{{ $now.toISO() }}</td></tr></table><p>Bitte <a href='{{ $json.execution.url }}'>Ausführung in n8n öffnen</a> und prüfen.</p>",
+        "options": {}
+      },
+      "id": "d1fda5c0-a257-40e0-b743-a7f843cec97c",
+      "name": "Email: Workflow-Fehler",
+      "type": "n8n-nodes-base.sendEmail",
+      "typeVersion": 2.1,
+      "position": [
+        1312,
+        -496
+      ],
+      "credentials": {}
+    },
+    {
       "parameters": {
         "rule": {
           "interval": [
@@ -12,13 +42,13 @@
           ]
         }
       },
-      "id": "9aa9065a-ebeb-46d6-81a7-30e5bedc3cc7",
+      "id": "b57a9d71-b6fa-4477-804d-866f2110d5e9",
       "name": "Täglich 07:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -2976,
-        -192
+        -1792,
+        256
       ]
     },
     {
@@ -26,28 +56,28 @@
         "assignments": {
           "assignments": [
             {
-              "id": "613f3ef8-1fd1-452d-b308-5b846681504f",
+              "id": "3bf6b2ea-ca74-4053-a733-f18c7932997b",
               "name": "sevdeskToken",
               "value": "60b2f6ec2db1af157b1dc4264fb7ee3f",
               "type": "string"
             },
             {
-              "id": "ab3f7fd8-a169-4dc6-886b-ebf4e7a6d7d3",
+              "id": "631cfbc2-f2c9-409e-895c-877b9beaa744",
               "name": "anthropicKey",
-              "value": "sk-ant-api03-...",
+              "value": "sk-ant-api03-...)",
               "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "61ae5d72-6ce4-4581-84c9-3842ddb472ba",
+      "id": "e02152a1-2bb4-49d9-b712-1c5f51dd9378",
       "name": "Zugangsdaten",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -2752,
-        -192
+        -1568,
+        256
       ]
     },
     {
@@ -77,13 +107,13 @@
         },
         "options": {}
       },
-      "id": "fce3156d-ca05-4f58-ba39-27370ed89e65",
+      "id": "12b0cc6c-addb-426e-abcb-c19d453f0d0b",
       "name": "Belege Status 50",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2512,
-        -304
+        -1328,
+        160
       ]
     },
     {
@@ -113,50 +143,50 @@
         },
         "options": {}
       },
-      "id": "63514893-11ce-4938-b81a-1eaa5d42380b",
+      "id": "3a30ea93-598f-4848-b37d-64f8416a65ed",
       "name": "Belege Status 100",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2512,
-        -96
+        -1328,
+        352
       ]
     },
     {
       "parameters": {},
-      "id": "d968850d-9f75-4c95-82eb-d656001ba636",
+      "id": "78788b9c-c6e2-4427-80e9-251dd260106c",
       "name": "Zusammenführen",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        -2272,
-        -192
+        -1088,
+        256
       ]
     },
     {
       "parameters": {
         "jsCode": "const seen = new Set();\nconst items = [];\nfor (const item of $input.all()) {\n  for (const v of (item.json.objects || [])) {\n    if (!seen.has(v.id)) {\n      seen.add(v.id);\n      items.push({ json: v });\n    }\n  }\n}\nreturn items;"
       },
-      "id": "82be0dc5-ccf7-4f82-9cf3-adc9c16bc89b",
+      "id": "24104641-cbc7-4756-9ab2-ff9b07944fce",
       "name": "Belege aufteilen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2032,
-        -192
+        -848,
+        256
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "e10d84b4-087a-4033-a053-d5b2f1332631",
+      "id": "4217d70c-7ec3-4c10-ab5b-7ecc832c3a36",
       "name": "Loop Belege",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -1792,
-        -192
+        -608,
+        256
       ]
     },
     {
@@ -173,26 +203,26 @@
         },
         "options": {}
       },
-      "id": "cb8a58e3-f60d-4eeb-8cad-1bc0c895b19d",
+      "id": "37d56a66-b4e1-4ec1-ba94-6da1c7121b25",
       "name": "PDF laden",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1552,
-        -192
+        -368,
+        256
       ]
     },
     {
       "parameters": {
         "jsCode": "const voucher = $('Loop Belege').item.json;\nconst pdfBase64 = $input.item.json.objects.content;\n\nconst SYSTEM_PROMPT = [\n  'Du bist ein erfahrener Buchhalter für die Höwer & Roth Immobilien GmbH (SKR04, Deutschland).',\n  'Analysiere den Beleg und erstelle einen Buchungsvorschlag.',\n  '',\n  'Antworte NUR mit einem JSON-Objekt (kein Markdown, keine Erläuterungen):',\n  '{',\n  '  \"lieferant\": \"Vollständiger Firmenname laut Beleg\",',\n  '  \"lieferant_strasse\": \"Straße und Hausnummer oder null\",',\n  '  \"lieferant_plz\": \"PLZ oder null\",',\n  '  \"lieferant_ort\": \"Ort oder null\",',\n  '  \"lieferant_ust_id\": \"USt-IdNr. oder null\",',\n  '  \"empfaenger\": \"Rechnungsempfänger laut Beleg oder null\",',\n  '  \"rechnungsnummer\": \"Rechnungsnr. oder null\",',\n  '  \"rechnungsdatum\": \"TT.MM.JJJJ oder null\",',\n  '  \"faelligkeitsdatum\": \"TT.MM.JJJJ oder null\",',\n  '  \"waehrung\": \"EUR\",',\n  '  \"bruttobetrag\": 0.00,',\n  '  \"nettobetrag\": 0.00,',\n  '  \"mwst_betrag\": 0.00,',\n  '  \"mwst_satz\": 19,',\n  '  \"reverse_charge\": false,',\n  '  \"sollkonto\": \"SKR04-Kontonummer als String\",',\n  '  \"habenkonto\": \"SKR04-Kontonummer als String\",',\n  '  \"buchungstext\": \"Lieferant — Zweck max 60 Zeichen\",',\n  '  \"beleg_typ\": \"rechnung|gutschrift|quittung\",',\n  '  \"abzugsfaehig_prozent\": 100,',\n  '  \"konfidenz\": \"hoch|mittel|niedrig\",',\n  '  \"status\": \"ok|klaeren\",',\n  '  \"hinweise\": \"Auffälligkeiten oder null\"',\n  '}',\n  '',\n  'BUCHUNGSREGELN SKR04 (Soll / Haben):',\n  '- Büromaterial, Porto            → 6815 / 3300',\n  '- Software-Abos, SaaS, Lizenzen → 6837 / 3300',\n  '- Telefon                        → 6805 / 3300',\n  '- Internet                       → 6810 / 3300',\n  '- Kfz-Kosten                     → 6520 / 3300',\n  '- Instandhaltung Immobilien      → 7135 / 3300',\n  '- Steuerberatung                 → 6827 / 3300',\n  '- Versicherung                   → 6400 / 3300',\n  '- Bewirtung (70% abziehbar)      → 6640 / 3300',\n  '- Werbung, Marketing             → 6600 / 3300',\n  '- Bankgebühren                   → 6855 / 1200',\n  '',\n  'GUTSCHRIFTEN: Soll und Haben vertauschen.',\n  'REVERSE CHARGE §13b: reverse_charge true, mwst 0, habenkonto 3837, status klaeren.',\n  'KLEINBETRAG <250€: MwSt aus Brutto herausrechnen.',\n  'BEWIRTUNG: abzugsfaehig_prozent 70, Hinweis Eigenbeleg.',\n  'MEHRWÄHRUNG: status klaeren wenn waehrung != EUR.'\n].join('\\n');\n\nreturn [{\n  json: {\n    voucher_id: voucher.id,\n    payload: {\n      model: 'claude-sonnet-4-6',\n      max_tokens: 1500,\n      system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],\n      messages: [{\n        role: 'user',\n        content: [\n          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },\n          { type: 'text', text: 'Analysiere diesen Beleg und erstelle den Buchungsvorschlag als JSON.' }\n        ]\n      }]\n    }\n  }\n}];"
       },
-      "id": "5aa9412f-6c1b-493e-a2e5-f55f709d9adf",
+      "id": "823a1e97-4cee-4eee-a401-1060dde3e9a2",
       "name": "Claude vorbereiten",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1312,
-        -192
+        -128,
+        256
       ]
     },
     {
@@ -225,26 +255,26 @@
         "body": "={{ JSON.stringify($json.payload) }}",
         "options": {}
       },
-      "id": "9185ea03-e353-49ce-be26-c97a02d18690",
+      "id": "1b3b4610-6da5-4524-84ab-4dd49427dc20",
       "name": "Claude API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1072,
-        -192
+        112,
+        256
       ]
     },
     {
       "parameters": {
         "jsCode": "const SKR04_MAP = {\n  '6300':'2','6310':'52','6325':'53','6335':'69','6400':'91',\n  '6520':'8','6530':'5','6540':'6','6570':'12','6600':'97',\n  '6640':'44','6643':'43','6670':'61','6673':'62','6680':'66',\n  '6800':'75','6805':'88','6810':'89','6815':'72','6820':'78',\n  '6825':'22','6827':'23','6830':'2816','6837':'2819',\n  '6840':'51','6855':'74','7135':'69','7310':'73','7320':'13'\n};\n\nconst raw = $input.item.json;\nconst prev = $('Claude vorbereiten').item.json;\n\nlet text = raw.content[0].text.trim()\n  .replace(/^```(?:json)?\\s*/m,'').replace(/\\s*```$/m,'');\nconst m = text.match(/\\{[\\s\\S]*\\}/);\nif (!m) throw new Error('Kein JSON in Claude-Antwort');\nconst result = JSON.parse(m[0]);\n\nconst parseDate = s => {\n  if (!s || !/^\\d{2}\\.\\d{2}\\.\\d{4}$/.test(s)) return null;\n  const [d,mo,y] = s.split('.');\n  return new Date(`${y}-${mo}-${d}`);\n};\nconst rdatum = parseDate(result.rechnungsdatum);\nconst beforeCutoff = !!(rdatum && rdatum < new Date('2026-01-01'));\n\nconst warnings = [];\nif (!result.lieferant)      warnings.push('Lieferant fehlt');\nif (!result.rechnungsdatum) warnings.push('Datum fehlt');\nif (!result.bruttobetrag)   warnings.push('Brutto fehlt');\nif (Number(result.bruttobetrag) === 0) warnings.push('Brutto ist 0');\nif (beforeCutoff)           warnings.push('Vor Stichtag 01.01.2026 — nicht buchen');\nif (result.waehrung && result.waehrung !== 'EUR') warnings.push('Fremdwährung: ' + result.waehrung);\n\nconst accountingTypeId = SKR04_MAP[String(result.sollkonto)] || null;\nif (result.sollkonto && !accountingTypeId) warnings.push('Kein AccountingType für Konto ' + result.sollkonto);\n\nreturn [{ json: { voucher_id: prev.voucher_id, result, warnings, beforeCutoff, accountingTypeId, usage: raw.usage } }];"
       },
-      "id": "c042c5af-3f95-4922-94ef-f9cbdecf9e93",
+      "id": "c3752d08-2867-49d1-99e9-c179b9e2582d",
       "name": "Analyse verarbeiten",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -832,
-        -192
+        352,
+        256
       ]
     },
     {
@@ -270,48 +300,48 @@
         },
         "options": {}
       },
-      "id": "89a3113f-baa8-4aca-b719-cfd73997af3b",
+      "id": "838abbf0-5b44-4a71-9b17-31bd659615a0",
       "name": "Nach Stichtag?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -592,
-        -192
+        592,
+        256
       ]
     },
     {
       "parameters": {
         "jsCode": "const sevdeskToken = $('Zugangsdaten').first().json.sevdeskToken;\nconst { voucher_id, result, accountingTypeId, warnings } = $input.item.json;\nconst BASE = 'https://my.sevdesk.de/api/v1';\nconst ah = { 'Authorization': sevdeskToken };\nconst jh = { 'Authorization': sevdeskToken, 'Content-Type': 'application/json' };\n\nconst req = async (method, path, body) => {\n  const opts = { method, url: BASE + path, headers: body ? jh : ah };\n  if (body) opts.body = JSON.stringify(body);\n  const r = await this.helpers.httpRequest(opts);\n  return typeof r === 'string' ? JSON.parse(r) : r;\n};\n\n// 1. Kontakt suchen\nlet contactId = null;\ntry {\n  const s = await req('GET', '/Contact?name=' + encodeURIComponent(result.lieferant) + '&limit=5');\n  if (s.objects?.length) contactId = s.objects[0].id;\n} catch(e) {}\n\n// 2. Kontakt anlegen\nif (!contactId && result.lieferant) {\n  try {\n    const payload = { name: result.lieferant, category: { id: '2', objectName: 'Category' } };\n    if (result.lieferant_ust_id) payload.vatNumber = result.lieferant_ust_id;\n    const c = await req('POST', '/Contact', payload);\n    contactId = c.objects?.id || null;\n    if (contactId && (result.lieferant_strasse || result.lieferant_ort)) {\n      await req('POST', '/ContactAddress', {\n        contact: { id: contactId, objectName: 'Contact' },\n        street: result.lieferant_strasse || '',\n        zip:    result.lieferant_plz    || '',\n        city:   result.lieferant_ort    || '',\n        country:  { id: '1',  objectName: 'StaticCountry' },\n        category: { id: '48', objectName: 'Category' }\n      });\n    }\n  } catch(e) {}\n}\n\n// 3. Kontakt mit Voucher verknüpfen\nif (contactId) {\n  try { await req('PUT', '/Voucher/' + voucher_id, { supplier: { id: contactId, objectName: 'Contact' }, supplierName: null }); }\n  catch(e) {}\n}\n\n// 4. AccountingType auf alle VoucherPos setzen\nif (accountingTypeId) {\n  try {\n    const pos = await req('GET', '/VoucherPos?voucher%5Bid%5D=' + voucher_id + '&voucher%5BobjectName%5D=Voucher');\n    for (const p of (pos.objects || [])) {\n      await req('PUT', '/VoucherPos/' + p.id, { accountingType: { id: accountingTypeId, objectName: 'AccountingType' } });\n    }\n  } catch(e) {}\n}\n\nreturn [{ json: {\n  voucher_id,\n  lieferant:          result.lieferant,\n  datum:              result.rechnungsdatum,\n  brutto:             result.bruttobetrag,\n  sollkonto:          result.sollkonto,\n  accounting_type_id: accountingTypeId,\n  kontakt_id:         contactId,\n  status:             warnings.length > 0 ? 'klaeren' : 'ok',\n  warnings\n} }];"
       },
-      "id": "4c082bb5-8f16-47f2-9c8d-2d5cd4724f7a",
+      "id": "83d0c062-f1c5-4bd8-b3d3-a1ee06326d58",
       "name": "Kontakt + Buchung",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -352,
-        -320
+        832,
+        144
       ]
     },
     {
       "parameters": {},
-      "id": "63b6d2a0-5f0a-4fb4-8551-99e983222934",
+      "id": "1501d119-ed93-48ab-b34f-7b6a1740e186",
       "name": "Übersprungen",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -352,
-        -80
+        832,
+        384
       ]
     },
     {
       "parameters": {},
-      "id": "652e38c2-d997-4bd7-9a40-34d530a47591",
+      "id": "b58d2ae7-2983-4847-8bd9-9fd84c47a96c",
       "name": "Alle Belege fertig",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -1792,
-        16
+        -608,
+        464
       ]
     },
     {
@@ -337,13 +367,13 @@
         },
         "options": {}
       },
-      "id": "a7d4a4c9-062d-439d-82fa-d32d1b836cd3",
+      "id": "0a76b2e4-78f6-43f1-b217-1cacd4a68880",
       "name": "Warnung vorhanden?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        128,
-        -320
+        1312,
+        144
       ]
     },
     {
@@ -351,39 +381,40 @@
         "fromEmail": "justus@hoewer-roth-immobilien.de",
         "toEmail": "justus@hoewer-roth-immobilien.de",
         "subject": "=sevDesk: Beleg prüfen — {{ $json.lieferant }} ({{ $json.datum }})",
+        "emailFormat": "html",
         "html": "=<h3>Beleg benötigt manuelle Prüfung</h3><table style='border-collapse:collapse;font-family:sans-serif;font-size:14px'><tr><td style='padding:4px 12px;font-weight:bold'>Lieferant</td><td>{{ $json.lieferant }}</td></tr><tr><td style='padding:4px 12px;font-weight:bold'>Datum</td><td>{{ $json.datum }}</td></tr><tr><td style='padding:4px 12px;font-weight:bold'>Brutto</td><td>{{ $json.brutto }} €</td></tr><tr><td style='padding:4px 12px;font-weight:bold'>Sollkonto</td><td>{{ $json.sollkonto }}</td></tr><tr><td style='padding:4px 12px;font-weight:bold'>Voucher-ID</td><td>{{ $json.voucher_id }}</td></tr><tr><td style='padding:4px 12px;font-weight:bold;color:#c00'>Warnungen</td><td style='color:#c00'>{{ $json.warnings.join('<br>') }}</td></tr></table><p><a href='https://my.sevdesk.de/#/fi/list'>→ sevDesk öffnen</a></p>",
         "options": {}
       },
-      "id": "ac6fcd2a-0256-4b93-82ee-69161835941f",
+      "id": "83b3553b-cbd7-4faf-bc4e-5f2c453d7a31",
       "name": "Email: Beleg prüfen",
-      "type": "n8n-nodes-base.emailSend",
+      "type": "n8n-nodes-base.sendEmail",
       "typeVersion": 2.1,
       "position": [
-        368,
-        -416
+        1552,
+        32
       ],
-      "webhookId": "bcbcd019-c63a-4459-b947-e987db0a349d"
+      "credentials": {}
     },
     {
       "parameters": {},
-      "id": "a1de8832-4ec0-49ad-a535-36dfbf722406",
+      "id": "c6842e26-cd91-4b54-8208-ebca02c0b636",
       "name": "Keine Warnung",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        368,
-        -224
+        1552,
+        240
       ]
     },
     {
       "parameters": {},
-      "id": "6b8c2b65-7d24-4ec0-8cb4-0fecc3314bed",
+      "id": "a51395d6-eb9e-48a8-960e-54744a805f1f",
       "name": "Loop weiter",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        608,
-        -320
+        1792,
+        144
       ]
     }
   ],
@@ -563,27 +594,10 @@
     },
     "Warnung vorhanden?": {
       "main": [
-        [
-          {
-            "node": "Email: Beleg prüfen",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [],
         [
           {
             "node": "Keine Warnung",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email: Beleg prüfen": {
-      "main": [
-        [
-          {
-            "node": "Loop weiter",
             "type": "main",
             "index": 0
           }
@@ -617,13 +631,28 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "pinData": {},
+  "pinData": {
+    "Zugangsdaten": [
+      {
+        "json": {
+          "name": "First item",
+          "code": 1
+        }
+      },
+      {
+        "json": {
+          "name": "Second item",
+          "code": 2
+        }
+      }
+    ]
+  },
   "staticData": null,
   "meta": {},
   "tags": [],
   "__backupMeta": {
     "archived": true,
     "active": false,
-    "workflowId": "2uG21CMOZe4XVkg0"
+    "workflowId": "iq2Sh212w3KTjoKF"
   }
 }
